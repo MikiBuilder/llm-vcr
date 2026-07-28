@@ -1,0 +1,84 @@
+{
+    "cassette": "eres-un-clasificador-de-tickets-de-sopor-11d466fe",
+    "version": 1,
+    "interactions": [
+        {
+            "fingerprint": "59658fa024d81cd8",
+            "recorded_at": "2026-07-28T22:03:46+02:00",
+            "request": {
+                "model": "llama-3.1-8b-instant",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Eres un clasificador de tickets de soporte. Responde SOLO con JSON válido, sin texto adicional, con esta forma exacta: {\"categoria\": string, \"sentimiento\": string, \"urgencia\": number}. La urgencia es un entero del 1 al 5."
+                    },
+                    {
+                        "role": "user",
+                        "content": "Hola, no puedo acceder a mi cuenta desde ayer y necesito entrar urgentemente."
+                    }
+                ],
+                "options": {
+                    "temperature": 0
+                }
+            },
+            "response": {
+                "text": "{\"categoria\": \"Acceso a la cuenta\", \"sentimiento\": \"Negativo\", \"urgencia\": 5}",
+                "input_tokens": 115,
+                "output_tokens": 26,
+                "latency_ms": 437.6
+            }
+        },
+        {
+            "fingerprint": "c96dcaacebdfcf29",
+            "recorded_at": "2026-07-28T22:03:46+02:00",
+            "request": {
+                "model": "llama-3.1-8b-instant",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Eres un clasificador de tickets de soporte. Responde SOLO con JSON válido, sin texto adicional, con esta forma exacta: {\"categoria\": string, \"sentimiento\": string, \"urgencia\": number}. La urgencia es un entero del 1 al 5."
+                    },
+                    {
+                        "role": "user",
+                        "content": "Buenos días, ¿me podrían enviar una copia de la factura del mes de marzo? Gracias."
+                    }
+                ],
+                "options": {
+                    "temperature": 0
+                }
+            },
+            "response": {
+                "text": "{\"categoria\": \"Facturación\", \"sentimiento\": \"Neutral\", \"urgencia\": 1}",
+                "input_tokens": 120,
+                "output_tokens": 23,
+                "latency_ms": 227.21
+            }
+        },
+        {
+            "fingerprint": "ad78f5904208d2f8",
+            "recorded_at": "2026-07-28T22:03:47+02:00",
+            "request": {
+                "model": "llama-3.1-8b-instant",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Eres un clasificador de tickets de soporte. Responde SOLO con JSON válido, sin texto adicional, con esta forma exacta: {\"categoria\": string, \"sentimiento\": string, \"urgencia\": number}. La urgencia es un entero del 1 al 5."
+                    },
+                    {
+                        "role": "user",
+                        "content": "El servicio lleva caído dos horas y estamos perdiendo ventas. Esto es inaceptable."
+                    }
+                ],
+                "options": {
+                    "temperature": 0
+                }
+            },
+            "response": {
+                "text": "{\"categoria\": \"Servicio\", \"sentimiento\": \"Negativo\", \"urgencia\": 5}",
+                "input_tokens": 119,
+                "output_tokens": 23,
+                "latency_ms": 235.09
+            }
+        }
+    ]
+}
