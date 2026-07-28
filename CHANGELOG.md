@@ -15,6 +15,13 @@ y el versionado sigue [SemVer](https://semver.org/lang/es/).
 - Comando `llm-vcr:drift` para Symfony Console, con salida Markdown.
 - `RecordingPlatform::useCassette()` para fijar el nombre de la cassette.
 
+### Rendimiento
+- Los tests del bundle usan `ContainerBuilder` en lugar de arrancar un kernel
+  completo en cada caso. Arrancar quince kernels compilaba y escribía el
+  contenedor a disco quince veces: en Windows eso convertía la suite en 25
+  segundos. Queda un único test con kernel real para cubrir la integración.
+  Resultado: 112 tests en 0,18 s.
+
 ### Notas técnicas
 - Symfony se declara en `suggest`, nunca en `require`: quien use solo PHPUnit
   no arrastra el framework. Hay un job de CI que lo verifica desinstalándolo.

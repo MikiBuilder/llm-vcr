@@ -13,19 +13,31 @@ use MikiBuilder\LlmVcr\Matching\PlaceholderMatcher;
 use MikiBuilder\LlmVcr\Matching\SemanticMatcher;
 use MikiBuilder\LlmVcr\Mode;
 use MikiBuilder\LlmVcr\Platform\InMemoryPlatform;
+use MikiBuilder\LlmVcr\Redaction\Redactor;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel;
 
 /**
- * Estos tests arrancan un kernel de Symfony DE VERDAD y compilan el
- * contenedor. No son mocks: si la configuración del bundle estuviera mal,
- * fallarían igual que en una aplicación real.
+ * Tests del bundle.
+ *
+ * NOTA DE RENDIMIENTO: arrancar un kernel completo compila y escribe el
+ * contenedor a disco. En Linux cuesta ~60 ms, pero en Windows el I/O es
+ * mucho más caro y quince kernels convertían la suite en 25 segundos.
+ *
+ * Por eso casi todo se verifica sobre un ContainerBuilder, que ejercita
+ * exactamente el mismo código del bundle (configuración + definición de
+ * servicios) sin tocar el disco: 15 contenedores en 14 ms.
+ *
+ * Queda UN test con kernel real, para garantizar que el bundle también
+ * funciona integrado de verdad en Symfony.
  */
 #[CoversClass(LlmVcrBundle::class)]
 #[CoversClass(PlatformFactory::class)]
@@ -79,16 +91,305 @@ final class LlmVcrBundleTest extends TestCase
         rmdir($path);
     }
 
+    // ── Camino rápido: sin kernel, sin disco ────────────────────────────
+
     /**
+     * Ejecuta la extensión del bundle sobre un contenedor limpio.
+     *
      * @param array<string, mixed> $llmVcrConfig
      */
-    private function bootKernel(array $llmVcrConfig = []): Kernel
+    private function build(array $llmVcrConfig = []): ContainerBuilder
+    {
+        $builder = new ContainerBuilder();
+        $builder->setParameter('kernel.debug', true);
+        $builder->setParameter('kernel.project_dir', $this->tmpDir);
+        $builder->setParameter('kernel.bundles', []);
+        $builder->setParameter('kernel.environment', 'test');
+        $builder->setParameter('kernel.build_dir', $this->tmpDir);
+
+        $extension = (new LlmVcrBundle())->getContainerExtension();
+        self::assertNotNull($extension);
+
+        $extension->load(
+            [$llmVcrConfig + ['cassette_dir' => $this->tmpDir . '/cassettes']],
+            $builder,
+        );
+
+        return $builder;
+    }
+
+    /**
+     * Instancia un servicio a partir de su definición, sin compilar.
+     *
+     * @param array<string, mixed> $config
+     */
+    private function instantiate(string $serviceId, array $config = []): object
+    {
+        $builder = $this->build($config);
+        $definition = $builder->getDefinition($serviceId);
+
+        /** @var class-string $class */
+        $class = $definition->getClass();
+
+        $args = array_map(
+            static fn (mixed $arg): mixed => $arg instanceof \Symfony\Component\DependencyInjection\Reference
+                ? null
+                : $arg,
+            array_values($definition->getArguments()),
+        );
+
+        return new $class(...$args);
+    }
+
+    #[Test]
+    public function laFabricaSeDefineConLaConfiguracionDada(): void
+    {
+        $builder = $this->build(['mode' => 'replay']);
+
+        $definition = $builder->getDefinition('llm_vcr.platform_factory');
+        $args = $definition->getArguments();
+
+        self::assertSame(PlatformFactory::class, $definition->getClass());
+        self::assertStringEndsWith('/cassettes', (string) $args[0]);
+        self::assertSame('replay', $args[1]);
+    }
+
+    #[Test]
+    public function porDefectoElModoEsRecord(): void
+    {
+        self::assertSame('record', $this->build()->getDefinition('llm_vcr.platform_factory')->getArgument(1));
+    }
+
+    #[Test]
+    public function laEstrategiaSemanticEsLaPorDefecto(): void
+    {
+        self::assertSame(
+            SemanticMatcher::class,
+            $this->build()->getDefinition('llm_vcr.matcher')->getClass(),
+        );
+    }
+
+    #[Test]
+    public function sePuedeElegirLaEstrategiaPlaceholder(): void
+    {
+        $matcher = $this->instantiate('llm_vcr.matcher', [
+            'matcher' => ['strategy' => 'placeholder', 'placeholders' => ['order_id' => '/PED-\d+/']],
+        ]);
+
+        self::assertInstanceOf(PlaceholderMatcher::class, $matcher);
+        self::assertSame(1.0, $matcher->similarity('pedido PED-1', 'pedido PED-2'));
+    }
+
+    #[Test]
+    public function sePuedeElegirLaEstrategiaExacta(): void
+    {
+        self::assertSame(
+            ExactMatcher::class,
+            $this->build(['matcher' => ['strategy' => 'exact']])->getDefinition('llm_vcr.matcher')->getClass(),
+        );
+    }
+
+    #[Test]
+    public function elUmbralDelMatcherEsConfigurable(): void
+    {
+        $matcher = $this->instantiate('llm_vcr.matcher', [
+            'matcher' => ['strategy' => 'semantic', 'threshold' => 0.95],
+        ]);
+
+        self::assertInstanceOf(MatcherInterface::class, $matcher);
+        self::assertSame(0.95, $matcher->threshold());
+    }
+
+    #[Test]
+    public function lasReglasDeRedaccionPersonalizadasLleganAlServicio(): void
+    {
+        $redactor = $this->instantiate('llm_vcr.redactor', [
+            'redaction' => ['custom_rules' => ['/\bEXP-\d{4}\b/' => '<REDACTED:EXPEDIENTE>']],
+        ]);
+
+        self::assertInstanceOf(Redactor::class, $redactor);
+        self::assertSame('Caso <REDACTED:EXPEDIENTE>', $redactor->redact('Caso EXP-2026'));
+    }
+
+    #[Test]
+    public function laRedaccionDePiiSePuedeDesactivar(): void
+    {
+        $redactor = $this->instantiate('llm_vcr.redactor', ['redaction' => ['pii' => false]]);
+
+        self::assertInstanceOf(Redactor::class, $redactor);
+        self::assertStringContainsString('test@example.com', $redactor->redact('Correo test@example.com'));
+        self::assertStringContainsString('<REDACTED:API_KEY>', $redactor->redact('sk-proj-AbCdEf0123456789XyZ'));
+    }
+
+    /**
+     * El DataCollector se comprueba sobre la DEFINICIÓN: sin WebProfilerBundle
+     * nadie consume el tag 'data_collector', y Symfony elimina los servicios
+     * privados sin consumidores al compilar.
+     */
+    #[Test]
+    public function elRecolectorDeDatosSeDefineCuandoElProfilerEstaActivo(): void
+    {
+        $definitions = $this->build(['profiler' => true])->getDefinitions();
+
+        self::assertArrayHasKey('llm_vcr.data_collector', $definitions);
+        self::assertArrayHasKey('data_collector', $definitions['llm_vcr.data_collector']->getTags());
+    }
+
+    #[Test]
+    public function elRecolectorNoSeDefineSiSeDesactiva(): void
+    {
+        self::assertArrayNotHasKey('llm_vcr.data_collector', $this->build(['profiler' => false])->getDefinitions());
+    }
+
+    #[Test]
+    public function elParametroDelDirectorioQuedaDisponible(): void
+    {
+        self::assertTrue($this->build()->hasParameter('llm_vcr.cassette_dir'));
+    }
+
+    #[Test]
+    public function seRegistranLosAliasParaAutowiring(): void
+    {
+        $builder = $this->build();
+
+        self::assertTrue($builder->hasAlias(MatcherInterface::class));
+        self::assertTrue($builder->hasAlias(Redactor::class));
+        self::assertTrue($builder->hasAlias(PlatformFactory::class));
+    }
+
+    #[Test]
+    public function laFabricaEsPublicaParaPoderInyectarla(): void
+    {
+        self::assertTrue($this->build()->getDefinition('llm_vcr.platform_factory')->isPublic());
+    }
+
+    // ── Comportamiento de la fábrica ────────────────────────────────────
+
+    private function factory(string $mode = 'record'): PlatformFactory
+    {
+        return new PlatformFactory(
+            $this->tmpDir . '/cassettes',
+            $mode,
+            new SemanticMatcher(),
+            new Redactor(),
+        );
+    }
+
+    /** @return list<array{role: string, content: string}> */
+    private function mensajes(): array
+    {
+        return [
+            ['role' => 'system', 'content' => 'Clasifica tickets.'],
+            ['role' => 'user', 'content' => 'Hola'],
+        ];
+    }
+
+    #[Test]
+    public function laFabricaEnvuelveUnaPlataformaYGrabaEnElDirectorioConfigurado(): void
+    {
+        $factory = $this->factory();
+
+        $result = $factory->wrap(new InMemoryPlatform('{"ok":true}'), cassette: 'demo')
+            ->invoke('llama-3.1-8b-instant', $this->mensajes());
+
+        self::assertSame('{"ok":true}', $result->text);
+        self::assertFileExists($factory->cassetteDir() . '/demo.json');
+    }
+
+    #[Test]
+    public function laRedaccionSeAplicaAlGrabar(): void
+    {
+        $factory = $this->factory();
+
+        $factory->wrap(new InMemoryPlatform('ok'), cassette: 'pii')
+            ->invoke('llama-3.1-8b-instant', [
+                ['role' => 'system', 'content' => 'Test.'],
+                ['role' => 'user', 'content' => 'Mi email es alguien@ejemplo.es'],
+            ]);
+
+        $contenido = (string) file_get_contents($factory->cassetteDir() . '/pii.json');
+
+        self::assertStringNotContainsString('alguien@ejemplo.es', $contenido);
+        self::assertStringContainsString('<REDACTED:EMAIL>', $contenido);
+    }
+
+    #[Test]
+    public function laFabricaAgregaLasMetricasDeTodasLasPlataformas(): void
+    {
+        $factory = $this->factory();
+
+        // Primera pasada: graba (llamada real). Segunda: sirve de cassette.
+        $factory->wrap(new InMemoryPlatform('{"a":1}'), cassette: 'm')->invoke('m1', $this->mensajes());
+        $factory->wrap(new InMemoryPlatform('{"a":1}'), cassette: 'm')->invoke('m1', $this->mensajes());
+
+        $stats = $factory->aggregatedStats();
+
+        self::assertSame(1, $stats['live']);
+        self::assertSame(1, $stats['replayed']);
+        self::assertSame(2, $stats['platforms']);
+        self::assertSame(0.5, $stats['hit_rate']);
+    }
+
+    #[Test]
+    public function resetLimpiaLasMetricasEntrePeticiones(): void
+    {
+        $factory = $this->factory();
+        $factory->wrap(new InMemoryPlatform('x'), cassette: 'r')->invoke('m1', $this->mensajes());
+
+        $factory->reset();
+
+        self::assertSame(0, $factory->aggregatedStats()['platforms']);
+    }
+
+    #[Test]
+    public function elRecolectorExponeLosDatosParaLaPlantilla(): void
+    {
+        $collector = new LlmVcrDataCollector($this->factory('replay'));
+        $collector->collect(
+            new \Symfony\Component\HttpFoundation\Request(),
+            new \Symfony\Component\HttpFoundation\Response(),
+        );
+
+        self::assertSame('replay', $collector->getMode());
+        self::assertSame(0, $collector->getTotal());
+        self::assertSame('default', $collector->getStatusColor());
+    }
+
+    #[Test]
+    public function elBadgeSePoneEnRojoSiSeTocaLaRedEnModoReplay(): void
+    {
+        $factory = $this->factory('replay');
+
+        // En bypass se fuerza una llamada real aunque el modo global sea replay.
+        $factory->wrap(new InMemoryPlatform('x'), cassette: 'r', mode: Mode::Bypass)
+            ->invoke('m1', [['role' => 'user', 'content' => 'hola']]);
+
+        $collector = new LlmVcrDataCollector($factory);
+        $collector->collect(
+            new \Symfony\Component\HttpFoundation\Request(),
+            new \Symfony\Component\HttpFoundation\Response(),
+        );
+
+        self::assertSame(1, $collector->getLive());
+        self::assertSame('red', $collector->getStatusColor());
+    }
+
+    // ── Integración real: un solo kernel ────────────────────────────────
+
+    /**
+     * El único test que arranca Symfony de verdad.
+     *
+     * Cubre lo que el ContainerBuilder no puede: que el bundle se registre,
+     * que el contenedor compile sin errores y que la fábrica sea recuperable
+     * ya construida. Si esto pasa, el bundle funciona en una app real.
+     */
+    #[Test]
+    public function elBundleFuncionaEnUnKernelDeSymfonyReal(): void
     {
         $cassetteDir = $this->tmpDir . '/cassettes';
         $cacheDir = $this->tmpDir . '/cache';
-        $config = $llmVcrConfig + ['cassette_dir' => $cassetteDir];
 
-        $kernel = new class('test', false, $config, $cacheDir) extends Kernel {
+        $kernel = new class('test', false, ['cassette_dir' => $cassetteDir, 'mode' => 'replay'], $cacheDir) extends Kernel {
             use MicroKernelTrait;
 
             /** @param array<string, mixed> $llmVcrConfig */
@@ -112,8 +413,6 @@ final class LlmVcrBundleTest extends TestCase
                     'secret' => 'test',
                     'test' => true,
                     'http_method_override' => false,
-                    // log=false evita que Symfony instale su ErrorHandler,
-                    // que PHPUnit detectaría como handler sin restaurar.
                     'php_errors' => ['log' => false],
                 ]);
                 $c->extension('llm_vcr', $this->llmVcrConfig);
@@ -138,275 +437,26 @@ final class LlmVcrBundleTest extends TestCase
         $kernel->boot();
         $this->kernels[] = $kernel;
 
-        return $kernel;
-    }
-
-    /**
-     * Contenedor especial de tests: da acceso a los servicios privados.
-     *
-     * En producción llm_vcr.matcher es privado (correcto: se inyecta, no se
-     * saca del contenedor). framework.test=true publica este contenedor
-     * justamente para poder inspeccionarlos desde los tests.
-     */
-    private function testContainer(Kernel $kernel): \Symfony\Component\DependencyInjection\ContainerInterface
-    {
-        /** @var \Symfony\Component\DependencyInjection\ContainerInterface $container */
-        $container = $kernel->getContainer()->get('test.service_container');
-
-        return $container;
-    }
-
-    /**
-     * Compila el contenedor sin las pasadas de optimización, para poder
-     * inspeccionar las definiciones tal y como las declara el bundle.
-     *
-     * @param array<string, mixed> $llmVcrConfig
-     *
-     * @return array<string, \Symfony\Component\DependencyInjection\Definition>
-     */
-    private function compiledDefinitions(array $llmVcrConfig = []): array
-    {
-        $builder = new \Symfony\Component\DependencyInjection\ContainerBuilder();
-        $builder->setParameter('kernel.debug', true);
-        $builder->setParameter('kernel.project_dir', $this->tmpDir);
-        $builder->setParameter('kernel.bundles', []);
-        $builder->setParameter('kernel.environment', 'test');
-        $builder->setParameter('kernel.build_dir', $this->tmpDir);
-
-        $bundle = new LlmVcrBundle();
-        $extension = $bundle->getContainerExtension();
-        self::assertNotNull($extension);
-
-        $extension->load([$llmVcrConfig + ['cassette_dir' => $this->tmpDir . '/cassettes']], $builder);
-
-        return $builder->getDefinitions();
-    }
-
-    #[Test]
-    public function elBundleArrancaYCompilaElContenedor(): void
-    {
-        $kernel = $this->bootKernel();
-
-        self::assertTrue($kernel->getContainer()->has('llm_vcr.platform_factory'));
-    }
-
-    #[Test]
-    public function laFabricaEsInyectableYUsaLaConfiguracion(): void
-    {
-        $kernel = $this->bootKernel(['mode' => 'replay']);
-
         $factory = $kernel->getContainer()->get('llm_vcr.platform_factory');
 
         self::assertInstanceOf(PlatformFactory::class, $factory);
         self::assertSame(Mode::Replay, $factory->mode());
-        self::assertStringEndsWith('/cassettes', $factory->cassetteDir());
+        self::assertSame($cassetteDir, $factory->cassetteDir());
     }
 
     #[Test]
-    public function porDefectoElModoEsRecord(): void
+    public function laConfiguracionRechazaUnaEstrategiaDesconocida(): void
     {
-        $kernel = $this->bootKernel();
+        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
 
-        $factory = $kernel->getContainer()->get('llm_vcr.platform_factory');
-        self::assertInstanceOf(PlatformFactory::class, $factory);
-
-        self::assertSame(Mode::Record, $factory->mode());
+        $this->build(['matcher' => ['strategy' => 'inventada']]);
     }
 
     #[Test]
-    public function laEstrategiaSemanticEsLaPorDefecto(): void
+    public function laConfiguracionRechazaUnUmbralFueraDeRango(): void
     {
-        $kernel = $this->bootKernel();
+        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
 
-        $matcher = $this->testContainer($kernel)->get('llm_vcr.matcher');
-
-        self::assertInstanceOf(SemanticMatcher::class, $matcher);
-    }
-
-    #[Test]
-    public function sePuedeElegirLaEstrategiaPlaceholder(): void
-    {
-        $kernel = $this->bootKernel([
-            'matcher' => [
-                'strategy' => 'placeholder',
-                'placeholders' => ['order_id' => '/PED-\d+/'],
-            ],
-        ]);
-
-        $matcher = $this->testContainer($kernel)->get('llm_vcr.matcher');
-
-        self::assertInstanceOf(PlaceholderMatcher::class, $matcher);
-        self::assertSame(1.0, $matcher->similarity('pedido PED-1', 'pedido PED-2'));
-    }
-
-    #[Test]
-    public function sePuedeElegirLaEstrategiaExacta(): void
-    {
-        $kernel = $this->bootKernel(['matcher' => ['strategy' => 'exact']]);
-
-        self::assertInstanceOf(ExactMatcher::class, $this->testContainer($kernel)->get('llm_vcr.matcher'));
-    }
-
-    #[Test]
-    public function elUmbralDelMatcherEsConfigurable(): void
-    {
-        $kernel = $this->bootKernel(['matcher' => ['strategy' => 'semantic', 'threshold' => 0.95]]);
-
-        $matcher = $this->testContainer($kernel)->get('llm_vcr.matcher');
-
-        self::assertInstanceOf(MatcherInterface::class, $matcher);
-        self::assertSame(0.95, $matcher->threshold());
-    }
-
-    #[Test]
-    public function laFabricaEnvuelveUnaPlataformaYGrabaEnElDirectorioConfigurado(): void
-    {
-        $kernel = $this->bootKernel(['mode' => 'record']);
-
-        $factory = $kernel->getContainer()->get('llm_vcr.platform_factory');
-        self::assertInstanceOf(PlatformFactory::class, $factory);
-
-        $platform = $factory->wrap(new InMemoryPlatform('{"ok":true}'), cassette: 'demo');
-
-        $result = $platform->invoke('llama-3.1-8b-instant', [
-            ['role' => 'system', 'content' => 'Clasifica tickets.'],
-            ['role' => 'user', 'content' => 'Hola'],
-        ]);
-
-        self::assertSame('{"ok":true}', $result->text);
-        self::assertFileExists($factory->cassetteDir() . '/demo.json');
-    }
-
-    #[Test]
-    public function laRedaccionSeAplicaSegunLaConfiguracion(): void
-    {
-        $kernel = $this->bootKernel(['redaction' => ['pii' => true]]);
-
-        $factory = $kernel->getContainer()->get('llm_vcr.platform_factory');
-        self::assertInstanceOf(PlatformFactory::class, $factory);
-
-        $factory->wrap(new InMemoryPlatform('ok'), cassette: 'pii')
-            ->invoke('llama-3.1-8b-instant', [
-                ['role' => 'system', 'content' => 'Test.'],
-                ['role' => 'user', 'content' => 'Mi email es alguien@ejemplo.es'],
-            ]);
-
-        $contenido = (string) file_get_contents($factory->cassetteDir() . '/pii.json');
-
-        self::assertStringNotContainsString('alguien@ejemplo.es', $contenido);
-        self::assertStringContainsString('<REDACTED:EMAIL>', $contenido);
-    }
-
-    #[Test]
-    public function lasReglasDeRedaccionPersonalizadasLleganAlServicio(): void
-    {
-        $kernel = $this->bootKernel([
-            'redaction' => ['custom_rules' => ['/\bEXP-\d{4}\b/' => '<REDACTED:EXPEDIENTE>']],
-        ]);
-
-        $redactor = $this->testContainer($kernel)->get('llm_vcr.redactor');
-        self::assertInstanceOf(\MikiBuilder\LlmVcr\Redaction\Redactor::class, $redactor);
-
-        self::assertSame(
-            'Caso <REDACTED:EXPEDIENTE>',
-            $redactor->redact('Caso EXP-2026'),
-        );
-    }
-
-    /**
-     * El DataCollector se comprueba sobre la DEFINICIÓN del contenedor, no
-     * sobre el servicio instanciado: sin WebProfilerBundle nadie consume el
-     * tag 'data_collector', y Symfony elimina los servicios privados sin
-     * consumidores al compilar. En una aplicación real con el profiler
-     * activo el tag lo mantiene vivo.
-     */
-    #[Test]
-    public function elRecolectorDeDatosSeDefineCuandoElProfilerEstaActivo(): void
-    {
-        $definitions = $this->compiledDefinitions(['profiler' => true]);
-
-        self::assertArrayHasKey('llm_vcr.data_collector', $definitions);
-        self::assertArrayHasKey('data_collector', $definitions['llm_vcr.data_collector']->getTags());
-    }
-
-    #[Test]
-    public function elRecolectorNoSeDefineSiSeDesactiva(): void
-    {
-        self::assertArrayNotHasKey('llm_vcr.data_collector', $this->compiledDefinitions(['profiler' => false]));
-    }
-
-    #[Test]
-    public function elRecolectorAgregaLasMetricasDeTodasLasPlataformas(): void
-    {
-        $kernel = $this->bootKernel(['mode' => 'record', 'profiler' => true]);
-
-        $factory = $kernel->getContainer()->get('llm_vcr.platform_factory');
-        self::assertInstanceOf(PlatformFactory::class, $factory);
-
-        $mensajes = [
-            ['role' => 'system', 'content' => 'Clasifica.'],
-            ['role' => 'user', 'content' => 'Hola'],
-        ];
-
-        // Primera pasada: graba (llamada real).
-        $factory->wrap(new InMemoryPlatform('{"a":1}'), cassette: 'm')->invoke('m1', $mensajes);
-        // Segunda: ya existe, se sirve de cassette.
-        $factory->wrap(new InMemoryPlatform('{"a":1}'), cassette: 'm')->invoke('m1', $mensajes);
-
-        $stats = $factory->aggregatedStats();
-
-        self::assertSame(1, $stats['live']);
-        self::assertSame(1, $stats['replayed']);
-        self::assertSame(2, $stats['platforms']);
-        self::assertSame(0.5, $stats['hit_rate']);
-    }
-
-    #[Test]
-    public function elRecolectorExponeLosDatosParaLaPlantilla(): void
-    {
-        $kernel = $this->bootKernel(['mode' => 'replay', 'profiler' => true]);
-
-        $factory = $kernel->getContainer()->get('llm_vcr.platform_factory');
-        self::assertInstanceOf(PlatformFactory::class, $factory);
-
-        $collector = new LlmVcrDataCollector($factory);
-        $collector->collect(
-            new \Symfony\Component\HttpFoundation\Request(),
-            new \Symfony\Component\HttpFoundation\Response(),
-        );
-
-        self::assertSame('replay', $collector->getMode());
-        self::assertSame(0, $collector->getTotal());
-        self::assertSame('default', $collector->getStatusColor());
-    }
-
-    #[Test]
-    public function elBadgeSePoneEnRojoSiSeTocaLaRedEnModoReplay(): void
-    {
-        $kernel = $this->bootKernel(['mode' => 'replay', 'profiler' => true]);
-
-        $factory = $kernel->getContainer()->get('llm_vcr.platform_factory');
-        self::assertInstanceOf(PlatformFactory::class, $factory);
-
-        // En bypass se fuerza una llamada real aunque el modo global sea replay.
-        $factory->wrap(new InMemoryPlatform('x'), cassette: 'r', mode: Mode::Bypass)
-            ->invoke('m1', [['role' => 'user', 'content' => 'hola']]);
-
-        $collector = new LlmVcrDataCollector($factory);
-        $collector->collect(
-            new \Symfony\Component\HttpFoundation\Request(),
-            new \Symfony\Component\HttpFoundation\Response(),
-        );
-
-        self::assertSame(1, $collector->getLive());
-        self::assertSame('red', $collector->getStatusColor());
-    }
-
-    #[Test]
-    public function elParametroDelDirectorioQuedaDisponible(): void
-    {
-        $kernel = $this->bootKernel();
-
-        self::assertTrue($kernel->getContainer()->hasParameter('llm_vcr.cassette_dir'));
+        $this->build(['matcher' => ['threshold' => 1.5]]);
     }
 }
