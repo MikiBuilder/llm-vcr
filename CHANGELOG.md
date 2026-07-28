@@ -15,6 +15,12 @@ y el versionado sigue [SemVer](https://semver.org/lang/es/).
 - Comando `llm-vcr:drift` para Symfony Console, con salida Markdown.
 - `RecordingPlatform::useCassette()` para fijar el nombre de la cassette.
 
+### Corregido
+- **El panel del Profiler no se registraba nunca.** El valor por defecto de
+  `profiler` llega a `loadExtension()` como el string `"%kernel.debug%"` sin
+  resolver, así que compararlo con `true` daba siempre falso. Detectado al
+  instalar el bundle en un proyecto Symfony 8.1 real; hay test de regresión.
+
 ### Rendimiento
 - Los tests del bundle usan `ContainerBuilder` en lugar de arrancar un kernel
   completo en cada caso. Arrancar quince kernels compilaba y escribía el

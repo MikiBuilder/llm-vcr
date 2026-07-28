@@ -241,6 +241,45 @@ final class LlmVcrBundleTest extends TestCase
         self::assertArrayNotHasKey('llm_vcr.data_collector', $this->build(['profiler' => false])->getDefinitions());
     }
 
+    /**
+     * Regresión: sin configurar 'profiler', el valor por defecto llega como el
+     * string "%kernel.debug%" —Symfony no resuelve los parámetros dentro de
+     * loadExtension()—, así que compararlo con true daba siempre falso y el
+     * panel NO se registraba nunca en una aplicación real.
+     *
+     * Este bug no lo detectaron los tests anteriores porque todos pasaban
+     * 'profiler' de forma explícita. Salió al instalar el bundle en un
+     * proyecto Symfony de verdad.
+     */
+    #[Test]
+    public function elRecolectorSeDefineConLaConfiguracionPorDefectoCuandoDebugEstaActivo(): void
+    {
+        $definitions = $this->build()->getDefinitions();
+
+        self::assertArrayHasKey(
+            'llm_vcr.data_collector',
+            $definitions,
+            'Con kernel.debug=true y sin configurar "profiler", el panel debe registrarse.',
+        );
+    }
+
+    #[Test]
+    public function elRecolectorNoSeDefineSiDebugEstaDesactivado(): void
+    {
+        $builder = new ContainerBuilder();
+        $builder->setParameter('kernel.debug', false);
+        $builder->setParameter('kernel.project_dir', $this->tmpDir);
+        $builder->setParameter('kernel.bundles', []);
+        $builder->setParameter('kernel.environment', 'prod');
+        $builder->setParameter('kernel.build_dir', $this->tmpDir);
+
+        $extension = (new LlmVcrBundle())->getContainerExtension();
+        self::assertNotNull($extension);
+        $extension->load([['cassette_dir' => $this->tmpDir . '/cassettes']], $builder);
+
+        self::assertArrayNotHasKey('llm_vcr.data_collector', $builder->getDefinitions());
+    }
+
     #[Test]
     public function elParametroDelDirectorioQuedaDisponible(): void
     {

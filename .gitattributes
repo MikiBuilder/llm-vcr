@@ -28,3 +28,4 @@
 /.dockerignore      export-ignore
 /bin/verificar.sh   export-ignore
 /bin/verificar.ps1  export-ignore
+/PROBAR-EN-SYMFONY.md export-ignore

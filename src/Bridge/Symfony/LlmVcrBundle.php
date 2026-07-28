@@ -108,7 +108,7 @@ final class LlmVcrBundle extends AbstractBundle
      *     mode: string,
      *     matcher: array{strategy: string, threshold: float, placeholders: array<string, string>},
      *     redaction: array{pii: bool, custom_rules: array<string, string>},
-     *     profiler: bool
+     *     profiler: bool|string
      * } $config
      */
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
@@ -153,7 +153,19 @@ final class LlmVcrBundle extends AbstractBundle
         $services->alias(PlatformFactory::class, 'llm_vcr.platform_factory');
 
         // ── Panel del Profiler ───────────────────────────────────────────
-        if ($config['profiler'] === true) {
+        // OJO: el valor por defecto es el marcador de parámetro sin resolver,
+        // es decir el string "%kernel.debug%", no un booleano. Symfony solo lo
+        // resuelve al inyectarlo en un servicio, no dentro de loadExtension().
+        // Por eso se resuelve aquí a mano contra el parámetro del contenedor.
+        $profiler = $config['profiler'];
+
+        if (is_string($profiler)) {
+            $profiler = $builder->hasParameter('kernel.debug')
+                ? (bool) $builder->getParameter('kernel.debug')
+                : false;
+        }
+
+        if ($profiler) {
             $services->set('llm_vcr.data_collector', LlmVcrDataCollector::class)
                 ->args([new Reference('llm_vcr.platform_factory')])
                 ->tag('data_collector', [
