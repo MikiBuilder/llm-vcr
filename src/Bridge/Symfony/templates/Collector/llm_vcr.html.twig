@@ -10,6 +10,15 @@
 {% block toolbar %}
     {% if collector.total > 0 or collector.cassetteCount > 0 %}
         {% set icon %}
+            {# Icono de casete, en línea: los collectors oficiales llevan SVG
+               y sin él nuestro bloque desentona en la barra. #}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <circle cx="8.5" cy="12" r="2.2"/>
+                <circle cx="15.5" cy="12" r="2.2"/>
+                <path d="M8.5 16.5h7"/>
+            </svg>
             <span class="sf-toolbar-value">{{ collector.replayed }}</span>
             <span class="sf-toolbar-label">cassette</span>
             {% if collector.live > 0 %}

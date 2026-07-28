@@ -113,12 +113,19 @@ final class HomeController extends AbstractController
         ];
 
         // Una grabación real + tres reproducciones = 75 % de hit rate.
-        $vcr->wrap(new InMemoryPlatform('{"categoria":"acceso","urgencia":4}'), cassette: 'web')
-            ->invoke('llama-3.1-8b-instant', $mensajes);
+        //
+        // simulatedLatencyMs imita lo que tarda un LLM de verdad (Groq ronda
+        // los 200-450 ms). Sin esto, "Tiempo ahorrado" saldría 0 ms y la
+        // métrica más vistosa del panel no se vería.
+        $llm = new InMemoryPlatform(
+            '{"categoria":"acceso","urgencia":4}',
+            simulatedLatencyMs: 320.0,
+        );
+
+        $vcr->wrap($llm, cassette: 'web')->invoke('llama-3.1-8b-instant', $mensajes);
 
         for ($i = 0; $i < 3; ++$i) {
-            $vcr->wrap(new InMemoryPlatform('x'), cassette: 'web')
-                ->invoke('llama-3.1-8b-instant', $mensajes);
+            $vcr->wrap($llm, cassette: 'web')->invoke('llama-3.1-8b-instant', $mensajes);
         }
 
         return new Response('<html><body><h1>Demo llm-vcr</h1>'

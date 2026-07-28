@@ -21,6 +21,10 @@ y el versionado sigue [SemVer](https://semver.org/lang/es/).
   resolver, así que compararlo con `true` daba siempre falso. Detectado al
   instalar el bundle en un proyecto Symfony 8.1 real; hay test de regresión.
 
+### Mejorado
+- La barra de depuración lleva ahora un **icono SVG**, igual que el resto de
+  collectors de Symfony. Sin él, nuestro bloque desentonaba en la toolbar.
+
 ### Rendimiento
 - Los tests del bundle usan `ContainerBuilder` en lugar de arrancar un kernel
   completo en cada caso. Arrancar quince kernels compilaba y escribía el
