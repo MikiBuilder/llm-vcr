@@ -1,0 +1,166 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/**
+ * CLI de llm-vcr.
+ *
+ *   bin/llm-vcr drift [--dir=cassettes] [--markdown]
+ *   bin/llm-vcr stats [--dir=cassettes]
+ */
+
+$autoloads = [
+    __DIR__ . '/../vendor/autoload.php',      // instalado como proyecto
+    __DIR__ . '/../../../autoload.php',       // instalado como dependencia
+];
+
+foreach ($autoloads as $file) {
+    if (is_file($file)) {
+        require $file;
+        break;
+    }
+}
+
+require_once __DIR__ . '/../examples/_env.php';
+
+use MikiBuilder\LlmVcr\Cassette\Cassette;
+use MikiBuilder\LlmVcr\Drift\DriftDetector;
+use MikiBuilder\LlmVcr\Drift\DriftReport;
+use MikiBuilder\LlmVcr\Drift\Severity;
+use MikiBuilder\LlmVcr\Platform\GroqPlatform;
+
+loadDotEnv(getcwd() . '/.env');
+
+$argvList = $argv ?? [];
+$command = $argvList[1] ?? 'help';
+
+/** @return array<string, string> */
+$parseOptions = static function (array $args): array {
+    $options = [];
+    foreach ($args as $arg) {
+        if (preg_match('/^--([a-z-]+)(?:=(.*))?$/', (string) $arg, $m) === 1) {
+            $options[$m[1]] = $m[2] ?? '1';
+        }
+    }
+
+    return $options;
+};
+
+$options = $parseOptions(array_slice($argvList, 2));
+$dir = $options['dir'] ?? (getcwd() . '/cassettes');
+
+/** @return list<string> */
+$findCassettes = static function (string $dir): array {
+    $files = glob(rtrim($dir, '/') . '/*.json');
+
+    return $files === false ? [] : array_values($files);
+};
+
+switch ($command) {
+    case 'drift':
+        $files = $findCassettes($dir);
+
+        if ($files === []) {
+            fwrite(STDERR, sprintf("No hay cassettes en %s\n", $dir));
+            exit(1);
+        }
+
+        try {
+            $platform = GroqPlatform::fromEnv();
+        } catch (\InvalidArgumentException $e) {
+            fwrite(STDERR, $e->getMessage() . "\n");
+            exit(1);
+        }
+
+        $detector = new DriftDetector($platform);
+
+        /** @var list<DriftReport> $all */
+        $all = [];
+        foreach ($files as $file) {
+            $cassette = Cassette::load(basename($file, '.json'), $file);
+            foreach ($detector->analyze($cassette) as $report) {
+                $all[] = $report;
+            }
+        }
+
+        $worst = 0;
+        $markdown = isset($options['markdown']);
+
+        if ($markdown) {
+            echo "## Informe de deriva — llm-vcr\n\n";
+            echo "| Severidad | Modelo | Similitud | Cambios |\n";
+            echo "|---|---|---|---|\n";
+        } else {
+            echo "\nInforme de deriva (" . count($all) . " interacciones)\n";
+            echo str_repeat('─', 70) . "\n";
+        }
+
+        foreach ($all as $report) {
+            $severity = $report->severity();
+            $worst = max($worst, $severity->exitCode());
+
+            if ($markdown) {
+                printf(
+                    "| %s %s | `%s` | %.2f | %s |\n",
+                    $severity->emoji(),
+                    $severity->value,
+                    $report->model,
+                    $report->similarity,
+                    $report->summary(),
+                );
+            } else {
+                printf(
+                    "%s  %-9s sim %.2f  %s\n",
+                    $severity->emoji(),
+                    $severity->value,
+                    $report->similarity,
+                    $report->summary(),
+                );
+            }
+        }
+
+        if (!$markdown) {
+            echo str_repeat('─', 70) . "\n";
+            echo $worst === 0
+                ? "Sin deriva significativa.\n\n"
+                : "DERIVA DETECTADA — revisa los prompts y regraba las cassettes.\n\n";
+        }
+
+        exit($worst);
+
+    case 'stats':
+        $files = $findCassettes($dir);
+        $interactions = 0;
+        $tokens = 0;
+
+        foreach ($files as $file) {
+            $cassette = Cassette::load(basename($file, '.json'), $file);
+            foreach ($cassette->interactions() as $interaction) {
+                ++$interactions;
+                $tokens += $interaction->inputTokens + $interaction->outputTokens;
+            }
+        }
+
+        printf("\nCassettes:     %d\n", count($files));
+        printf("Interacciones: %d\n", $interactions);
+        printf("Tokens que NO se gastan en cada ejecución de la suite: %d\n\n", $tokens);
+        exit(0);
+
+    default:
+        echo <<<TXT
+
+        llm-vcr — record & replay semántico para features de IA en PHP
+
+        USO:
+          bin/llm-vcr drift [--dir=cassettes] [--markdown]
+              Reproduce las cassettes contra el proveedor real y detecta
+              si el modelo ha cambiado de comportamiento.
+              Sale con código 1 si hay deriva ALTA o CRÍTICA.
+
+          bin/llm-vcr stats [--dir=cassettes]
+              Resumen de las cassettes grabadas.
+
+        TXT;
+        exit(0);
+}

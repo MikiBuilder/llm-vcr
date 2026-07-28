@@ -1,0 +1,19 @@
+parameters:
+    level: 9
+    paths:
+        - src
+        - tests
+    treatPhpDocTypesAsCertain: false
+
+    excludePaths:
+        analyse:
+            # Este fichero llama a expect() y test(), que solo existen si el
+            # usuario tiene Pest instalado. Analizarlo sin la dependencia
+            # produce falsos positivos ("Function test not found").
+            #
+            # La lógica real vive en PestSupport, que SÍ se analiza a nivel 9;
+            # este fichero es solo el pegamento declarativo de registro.
+            #
+            # Si algún día se añade pestphp/pest a require-dev, se quita esta
+            # exclusión y se analiza con normalidad.
+            - src/Testing/Pest.php

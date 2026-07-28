@@ -1,0 +1,62 @@
+{
+    "name": "mikibuilder/llm-vcr",
+    "description": "Record & replay semántico para features de IA en PHP. Graba respuestas reales de tu LLM, reprodúcelas en CI sin red ni API key, y detecta cuándo el proveedor cambia el modelo por debajo.",
+    "type": "library",
+    "keywords": ["llm", "ai", "testing", "vcr", "cassette", "record", "replay", "drift", "openai", "groq", "symfony", "php"],
+    "homepage": "https://github.com/MikiBuilder/llm-vcr",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "MikiBuilder",
+            "email": "264189149+MikiBuilder@users.noreply.github.com",
+            "homepage": "https://github.com/MikiBuilder",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/MikiBuilder/llm-vcr/issues",
+        "source": "https://github.com/MikiBuilder/llm-vcr"
+    },
+    "require": {
+        "php": ">=8.2",
+        "ext-json": "*",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5",
+        "phpstan/phpstan": "^2.1"
+    },
+    "suggest": {
+        "ext-curl": "Para usar GroqPlatform y otros clientes HTTP reales (si no, se usa el transporte por streams)",
+        "pestphp/pest": "Para las expectativas toBeLlmJson(), toMatchLlmShape() y toHaveMadeNoLiveCalls()"
+    },
+    "autoload": {
+        "psr-4": {
+            "MikiBuilder\\LlmVcr\\": "src/"
+        },
+        "files": [
+            "src/Testing/Pest.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MikiBuilder\\LlmVcr\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite=unit",
+        "test:integration": "phpunit --testsuite=integration",
+        "stan": "phpstan analyse",
+        "check": [
+            "@stan",
+            "@test"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,16 @@
+services:
+  php:
+    build: .
+    container_name: llm-vcr
+    working_dir: /app
+    volumes:
+      # Monta el código para que los cambios se vean sin reconstruir.
+      - .:/app
+      # Excluye vendor del host: se usa el del contenedor.
+      - /app/vendor
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      LLM_VCR_MODE: ${LLM_VCR_MODE:-record}
+      LLM_VCR_MODEL: ${LLM_VCR_MODEL:-llama-3.1-8b-instant}
+    # Mantiene el contenedor vivo para entrar con `docker compose exec`.
+    command: tail -f /dev/null

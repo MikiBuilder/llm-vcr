@@ -1,0 +1,23 @@
+# Lo que NO debe entrar en la imagen.
+#
+# vendor/ se instala dentro del contenedor (las extensiones compiladas del
+# host pueden no ser compatibles), y .env contiene secretos que jamás deben
+# quedar horneados en una capa de imagen.
+
+vendor/
+.env
+.env.local
+
+.git/
+.github/
+
+.phpunit.cache/
+.phpunit.result.cache
+coverage/
+build/
+
+.idea/
+.vscode/
+.DS_Store
+
+*.zip

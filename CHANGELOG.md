@@ -1,0 +1,72 @@
+# Changelog
+
+Todos los cambios relevantes de este proyecto se documentan aquí.
+
+El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/)
+y el versionado sigue [SemVer](https://semver.org/lang/es/).
+
+## [Sin publicar]
+
+### Pendiente
+- `LlmVcrBundle` para Symfony, con panel en el Web Profiler
+- `EmbeddingMatcher` con caché en disco
+- Soporte para respuestas en streaming y tool calls
+
+## [0.1.0] - 2026-07-28
+
+Primera versión pública.
+
+### Añadido
+
+**Núcleo**
+- `RecordingPlatform`: decorador que graba y reproduce interacciones LLM
+  sin que el código de negocio se entere.
+- Cuatro modos de operación (`record`, `replay`, `bypass`, `refresh`) vía
+  el enum `Mode`, configurables con la variable `LLM_VCR_MODE`.
+- Cassettes en JSON legible y versionable, con escritura atómica
+  (fichero temporal + `rename`) para soportar tests en paralelo.
+
+**Coincidencia de prompts**
+- `SemanticMatcher`: similitud de coseno sobre bag-of-words con damping
+  logarítmico, tolerante a timestamps, UUIDs e IDs cambiantes.
+- `PlaceholderMatcher`: sustitución de parámetros dinámicos declarados por
+  el usuario. Determinista y sin falsos positivos.
+- `ExactMatcher`: comparación estricta.
+
+**Seguridad**
+- `Redactor` activado por defecto: claves de OpenAI/Groq/GitHub/AWS, JWT,
+  Bearer tokens, emails, teléfonos españoles, DNI, NIE, IBAN y tarjetas.
+- El matching opera sobre texto ya redactado, para que las peticiones con
+  PII también encuentren su cassette.
+
+**Detección de deriva**
+- `DriftDetector`: compara las respuestas grabadas con las actuales del
+  proveedor, incluyendo diferencias de **tipo** en el JSON.
+- Severidades `CRITICA`, `ALTA`, `MEDIA` y `OK`, con código de salida
+  distinto de cero para romper el build.
+
+**Experiencia de desarrollo**
+- Trait `InteractsWithLlm` para PHPUnit, con seis aserciones propias.
+- Seis expectativas nativas de Pest, registradas automáticamente.
+- Nombrado automático de cassettes a partir del test en curso.
+
+**Herramientas**
+- CLI `bin/llm-vcr` con los comandos `drift` y `stats`.
+- Workflows de GitHub Actions: CI en modo replay y cron nocturno de deriva.
+- Entorno Docker y `Makefile`.
+
+### Notas técnicas
+
+Dos errores encontrados durante el desarrollo, ambos con test de regresión:
+
+- **Redacción y matching desalineados.** La cassette guarda
+  `<REDACTED:EMAIL>`, así que comparar contra el prompt en crudo hacía
+  fallar justo las peticiones con datos personales. Ambos lados de la
+  comparación deben estar en el mismo espacio.
+- **Registro de las expectativas de Pest.** Composer carga los ficheros
+  `files` en orden de dependencias; como el paquete no depende de Pest, se
+  ejecutaba antes de que existieran sus funciones globales y el registro
+  fallaba en silencio. La guarda correcta es `class_exists()`.
+
+[Sin publicar]: https://github.com/MikiBuilder/llm-vcr/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/MikiBuilder/llm-vcr/releases/tag/v0.1.0

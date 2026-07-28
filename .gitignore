@@ -1,0 +1,15 @@
+/vendor/
+/composer.lock
+/.phpunit.cache/
+/.phpunit.result.cache
+/coverage/
+/build/
+.env
+.env.local
+.DS_Store
+.idea/
+.vscode/
+
+# Las cassettes SÍ se commitean: son el fixture del proyecto.
+# Solo ignoramos las de scratch/experimentos.
+/cassettes/scratch/
