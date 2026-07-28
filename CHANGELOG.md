@@ -25,6 +25,11 @@ y el versionado sigue [SemVer](https://semver.org/lang/es/).
 - La barra de depuración lleva ahora un **icono SVG**, igual que el resto de
   collectors de Symfony. Sin él, nuestro bloque desentonaba en la toolbar.
 
+### Mejorado
+- El panel explica por qué "Latencia evitada" puede salir 0 ms: el tiempo se
+  lee de la cassette, así que una grabada sin latencia no tiene nada que
+  mostrar. Sin la nota parecía un fallo del panel.
+
 ### Rendimiento
 - Los tests del bundle usan `ContainerBuilder` en lugar de arrancar un kernel
   completo en cada caso. Arrancar quince kernels compilaba y escribía el

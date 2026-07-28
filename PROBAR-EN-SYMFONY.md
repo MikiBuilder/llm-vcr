@@ -140,6 +140,19 @@ final class HomeController extends AbstractController
 
 ---
 
+> ⚠️ **Si ya habías cargado la página antes**, borra la cassette vieja:
+>
+> ```powershell
+> Remove-Item tests\cassettes\*.json
+> ```
+>
+> La latencia se guarda **dentro** de la cassette al grabarla. Si la grabaste
+> con una versión anterior del controlador (sin `simulatedLatencyMs`), seguirá
+> mostrando `0 ms` por muchas veces que recargues: al reproducir se lee del
+> fichero, no del código.
+
+---
+
 ## PASO 6 · Arranca y mira el panel
 
 ```powershell

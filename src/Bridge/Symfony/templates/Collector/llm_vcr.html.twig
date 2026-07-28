@@ -120,6 +120,24 @@
         </div>
     {% endif %}
 
+    {#
+        Sin esta nota, un "0 ms" con reproducciones parece un fallo del panel.
+        En realidad la latencia se lee de la cassette: si se grabó contra una
+        plataforma sin latencia, no hay tiempo que ahorrar que mostrar.
+    #}
+    {% if collector.replayed > 0 and collector.latencySavedMs == 0 %}
+        <div class="card-block">
+            <p>
+                <strong>Latencia evitada: 0 ms.</strong>
+                El tiempo ahorrado se lee de la cassette, y la que se está
+                reproduciendo se grabó sin latencia (una plataforma simulada,
+                o una grabación anterior). Con un proveedor real aparecerá el
+                tiempo que costó cada respuesta. Para recalcularlo, borra la
+                cassette y vuelve a grabarla.
+            </p>
+        </div>
+    {% endif %}
+
     {% if collector.total == 0 %}
         <div class="empty">
             <p>Esta petición no ha invocado a ningún modelo.</p>

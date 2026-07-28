@@ -157,6 +157,51 @@ final class ProfilerPanelTest extends TestCase
         self::assertStringContainsString('llamadas reales en modo', $html);
     }
 
+    /**
+     * Un "0 ms" junto a varias reproducciones parece un fallo del panel.
+     * En realidad la latencia se lee de la cassette: si se grabó sin
+     * latencia, no hay tiempo que mostrar. El panel debe explicarlo.
+     */
+    #[Test]
+    public function elPanelExplicaPorQueLaLatenciaEsCeroAlReproducir(): void
+    {
+        $collector = $this->collector($this->factoryConActividad());
+
+        self::assertSame(0.0, $collector->getLatencySavedMs());
+
+        $html = $this->twig()
+            ->load('Collector/llm_vcr.html.twig')
+            ->renderBlock('panel', ['collector' => $collector]);
+
+        self::assertStringContainsString('se lee de la cassette', $html);
+    }
+
+    #[Test]
+    public function elPanelNoMuestraLaNotaSiHayLatenciaQueEnsenar(): void
+    {
+        $factory = new PlatformFactory($this->tmpDir, 'record', new SemanticMatcher(), new Redactor());
+        $llm = new InMemoryPlatform('{"ok":true}', simulatedLatencyMs: 320.0);
+
+        $mensajes = [
+            ['role' => 'system', 'content' => 'Clasifica.'],
+            ['role' => 'user', 'content' => 'hola'],
+        ];
+
+        // Se graba con latencia y luego se reproduce: ya hay tiempo ahorrado.
+        $factory->wrap($llm, cassette: 'lat')->invoke('m1', $mensajes);
+        $factory->wrap($llm, cassette: 'lat')->invoke('m1', $mensajes);
+
+        $collector = $this->collector($factory);
+
+        self::assertSame(320.0, $collector->getLatencySavedMs());
+
+        $html = $this->twig()
+            ->load('Collector/llm_vcr.html.twig')
+            ->renderBlock('panel', ['collector' => $collector]);
+
+        self::assertStringNotContainsString('se lee de la cassette', $html);
+    }
+
     #[Test]
     public function elPanelIndicaCuandoNoHuboInvocaciones(): void
     {
