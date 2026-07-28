@@ -23,12 +23,20 @@
         "ext-mbstring": "*"
     },
     "require-dev": {
+        "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.5",
-        "phpstan/phpstan": "^2.1"
+        "symfony/config": "^7.4",
+        "symfony/console": "^7.4",
+        "symfony/dependency-injection": "^7.4",
+        "symfony/framework-bundle": "^7.4",
+        "symfony/http-kernel": "^7.4",
+        "symfony/twig-bundle": "^7.4",
+        "symfony/web-profiler-bundle": "^7.4"
     },
     "suggest": {
         "ext-curl": "Para usar GroqPlatform y otros clientes HTTP reales (si no, se usa el transporte por streams)",
-        "pestphp/pest": "Para las expectativas toBeLlmJson(), toMatchLlmShape() y toHaveMadeNoLiveCalls()"
+        "pestphp/pest": "Para las expectativas toBeLlmJson(), toMatchLlmShape() y toHaveMadeNoLiveCalls()",
+        "symfony/framework-bundle": "Para usar LlmVcrBundle: configuración declarativa y panel en el Web Profiler"
     },
     "autoload": {
         "psr-4": {

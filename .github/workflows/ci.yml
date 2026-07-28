@@ -48,3 +48,45 @@ jobs:
         run: vendor/bin/phpunit
         env:
           LLM_VCR_MODE: replay
+
+  # Symfony es una dependencia OPCIONAL: quien instale llm-vcr para usarlo
+  # con PHPUnit a secas no debe arrastrar medio framework. Este job verifica
+  # que el núcleo funciona sin Symfony instalado.
+  sin-symfony:
+    name: Núcleo sin Symfony
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, json, dom
+          coverage: none
+
+      - name: Instalar sin los paquetes de Symfony
+        run: |
+          composer install --no-interaction --prefer-dist
+          composer remove --dev --no-interaction --no-update \
+            symfony/framework-bundle symfony/http-kernel symfony/dependency-injection \
+            symfony/config symfony/twig-bundle symfony/web-profiler-bundle symfony/console
+          composer update --no-interaction --prefer-dist
+
+      - name: El núcleo debe funcionar sin Symfony
+        run: |
+          php -r '
+            require "vendor/autoload.php";
+            use MikiBuilder\LlmVcr\{RecordingPlatform, Mode};
+            use MikiBuilder\LlmVcr\Platform\InMemoryPlatform;
+            $d = sys_get_temp_dir()."/ci-".bin2hex(random_bytes(4));
+            $p = new RecordingPlatform(new InMemoryPlatform("{\"ok\":true}"), $d, Mode::Record);
+            $r = $p->invoke("modelo", [["role" => "user", "content" => "hola"]]);
+            if ($r->text !== "{\"ok\":true}") { exit(1); }
+            echo "El núcleo funciona sin Symfony\n";
+          '
+
+      - name: Tests del núcleo (excluyendo los del bundle)
+        run: vendor/bin/phpunit --testsuite=unit --exclude-group symfony
+        env:
+          LLM_VCR_MODE: replay

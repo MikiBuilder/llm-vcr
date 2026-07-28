@@ -1,0 +1,186 @@
+{% extends '@WebProfiler/Profiler/layout.html.twig' %}
+
+{#
+    Panel de llm-vcr para el Web Profiler.
+
+    La barra muestra de un vistazo si la petición tocó la red;
+    el panel desglosa el ahorro en tiempo y tokens.
+#}
+
+{% block toolbar %}
+    {% if collector.total > 0 or collector.cassetteCount > 0 %}
+        {% set icon %}
+            <span class="sf-toolbar-value">{{ collector.replayed }}</span>
+            <span class="sf-toolbar-label">cassette</span>
+            {% if collector.live > 0 %}
+                <span class="sf-toolbar-value">/ {{ collector.live }}</span>
+                <span class="sf-toolbar-label">API</span>
+            {% endif %}
+        {% endset %}
+
+        {% set text %}
+            <div class="sf-toolbar-info-piece">
+                <b>Modo</b>
+                <span class="sf-toolbar-status sf-toolbar-status-{{ collector.statusColor }}">{{ collector.mode }}</span>
+            </div>
+            <div class="sf-toolbar-info-piece">
+                <b>Desde cassette</b>
+                <span>{{ collector.replayed }}</span>
+            </div>
+            <div class="sf-toolbar-info-piece">
+                <b>Llamadas reales</b>
+                <span>{{ collector.live }}</span>
+            </div>
+            <div class="sf-toolbar-info-piece">
+                <b>Tokens ahorrados</b>
+                <span>{{ collector.tokensSaved|number_format(0, ',', '.') }}</span>
+            </div>
+            <div class="sf-toolbar-info-piece">
+                <b>Tiempo ahorrado</b>
+                <span>{{ collector.latencySavedMs|number_format(0, ',', '.') }} ms</span>
+            </div>
+        {% endset %}
+
+        {{ include('@WebProfiler/Profiler/toolbar_item.html.twig', {
+            link: true,
+            status: collector.statusColor
+        }) }}
+    {% endif %}
+{% endblock %}
+
+{% block menu %}
+    <span class="label {{ collector.live > 0 and collector.mode == 'replay' ? 'label-status-error' : '' }}">
+        <span class="icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="6" width="20" height="12" rx="2"/>
+                <circle cx="8" cy="12" r="2"/>
+                <circle cx="16" cy="12" r="2"/>
+            </svg>
+        </span>
+        <strong>llm-vcr</strong>
+        {% if collector.total > 0 %}
+            <span class="count"><span>{{ collector.total }}</span></span>
+        {% endif %}
+    </span>
+{% endblock %}
+
+{% block panel %}
+    <h2>llm-vcr</h2>
+
+    <div class="metrics">
+        <div class="metric">
+            <span class="value">{{ collector.mode }}</span>
+            <span class="label">Modo</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ collector.replayed }}</span>
+            <span class="label">Desde cassette</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ collector.live }}</span>
+            <span class="label">Llamadas reales</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ collector.hitRatePercent }}<span class="unit">%</span></span>
+            <span class="label">Hit rate</span>
+        </div>
+    </div>
+
+    <div class="metrics">
+        <div class="metric">
+            <span class="value">{{ collector.tokensSaved|number_format(0, ',', '.') }}</span>
+            <span class="label">Tokens no gastados</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ collector.latencySavedMs|number_format(0, ',', '.') }}<span class="unit">ms</span></span>
+            <span class="label">Latencia evitada</span>
+        </div>
+        <div class="metric">
+            <span class="value">{{ collector.cassetteCount }}</span>
+            <span class="label">Cassettes en disco</span>
+        </div>
+    </div>
+
+    {% if collector.live > 0 and collector.mode == 'replay' %}
+        <div class="card-block error">
+            <p>
+                <strong>Se han hecho {{ collector.live }} llamadas reales en modo <code>replay</code>.</strong>
+                Eso no debería ocurrir: revisa si falta grabar alguna cassette.
+            </p>
+        </div>
+    {% endif %}
+
+    {% if collector.total == 0 %}
+        <div class="empty">
+            <p>Esta petición no ha invocado a ningún modelo.</p>
+        </div>
+    {% else %}
+        <h3>Resumen</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Concepto</th>
+                    <th scope="col">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th scope="row">Invocaciones totales</th>
+                    <td>{{ collector.total }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Servidas desde cassette</th>
+                    <td>{{ collector.replayed }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Enviadas al proveedor</th>
+                    <td>{{ collector.live }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Plataformas envueltas</th>
+                    <td>{{ collector.platforms }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Directorio de cassettes</th>
+                    <td><code>{{ collector.cassetteDir }}</code></td>
+                </tr>
+            </tbody>
+        </table>
+    {% endif %}
+
+    <h3>Modos</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Modo</th>
+                <th scope="col">Cuándo</th>
+                <th scope="col">Comportamiento</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr{% if collector.mode == 'record' %} class="status-success"{% endif %}>
+                <th scope="row"><code>record</code></th>
+                <td>Desarrollo local</td>
+                <td>Graba si no existe; si existe, reproduce</td>
+            </tr>
+            <tr{% if collector.mode == 'replay' %} class="status-success"{% endif %}>
+                <th scope="row"><code>replay</code></th>
+                <td>CI</td>
+                <td>Solo reproduce; falla si falta la cassette</td>
+            </tr>
+            <tr{% if collector.mode == 'bypass' %} class="status-success"{% endif %}>
+                <th scope="row"><code>bypass</code></th>
+                <td>Depuración</td>
+                <td>Ignora cassettes, siempre API real</td>
+            </tr>
+            <tr{% if collector.mode == 'refresh' %} class="status-success"{% endif %}>
+                <th scope="row"><code>refresh</code></th>
+                <td>Actualizar fixtures</td>
+                <td>Regraba todo desde cero</td>
+            </tr>
+        </tbody>
+    </table>
+{% endblock %}

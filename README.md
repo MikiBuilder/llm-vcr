@@ -107,6 +107,106 @@ make check    # PHPStan nivel 9 + tests
 
 ---
 
+## Integración con Symfony
+
+El bundle añade configuración declarativa y un **panel en el Web Profiler** con
+las métricas de cada petición.
+
+Symfony es una dependencia **opcional**: si solo usas PHPUnit o Pest, no
+arrastras nada.
+
+```php
+// config/bundles.php
+return [
+    // ...
+    MikiBuilder\LlmVcr\Bridge\Symfony\LlmVcrBundle::class => ['all' => true],
+];
+```
+
+```yaml
+# config/packages/llm_vcr.yaml
+llm_vcr:
+    cassette_dir: '%kernel.project_dir%/tests/cassettes'
+    mode: record
+
+    matcher:
+        strategy: semantic     # semantic | placeholder | exact
+        threshold: 0.82
+
+    redaction:
+        pii: true              # las credenciales se redactan SIEMPRE
+```
+
+```yaml
+# config/packages/test/llm_vcr.yaml
+# En tests nunca se toca la red: si falta una cassette, el test falla.
+llm_vcr:
+    mode: replay
+```
+
+Y en tu servicio:
+
+```php
+use MikiBuilder\LlmVcr\Bridge\Symfony\PlatformFactory;
+
+final class TicketAnalyzer
+{
+    public function __construct(
+        private PlatformFactory $vcr,
+        private MiClienteLlm $cliente,
+    ) {}
+
+    public function analyze(string $texto): TicketDto
+    {
+        $platform = $this->vcr->wrap($this->cliente, cassette: 'tickets');
+
+        $result = $platform->invoke('llama-3.1-8b-instant', [
+            ['role' => 'system', 'content' => 'Clasifica tickets. Responde JSON.'],
+            ['role' => 'user',   'content' => $texto],
+        ]);
+
+        return TicketDto::fromArray($result->asStructured() ?? []);
+    }
+}
+```
+
+### El panel del Profiler
+
+En la barra de depuración verás de un vistazo cuántas invocaciones vinieron de
+disco y cuántas tocaron la API. El panel desglosa:
+
+| Métrica | Qué te dice |
+|---|---|
+| **Modo** | `record`, `replay`, `bypass` o `refresh` |
+| **Desde cassette** / **Llamadas reales** | Si esta petición gastó cuota |
+| **Hit rate** | Porcentaje servido desde disco |
+| **Tokens no gastados** | Ahorro acumulado |
+| **Latencia evitada** | Milisegundos que no esperaste |
+
+El badge se pone **rojo** si se hicieron llamadas reales estando en modo
+`replay`: normalmente significa que falta grabar una cassette.
+
+### Comando de consola
+
+```bash
+bin/console llm-vcr:drift              # ¿ha cambiado el modelo del proveedor?
+bin/console llm-vcr:drift --markdown   # tabla para pegar en una PR
+```
+
+Devuelve código de salida 1 si detecta deriva ALTA o CRÍTICA, así que puedes
+encadenarlo en un cron nocturno y romper el build.
+
+Necesita que tu cliente LLM esté registrado con el alias
+`llm_vcr.live_platform`:
+
+```yaml
+services:
+    llm_vcr.live_platform:
+        alias: App\Llm\MiClienteLlm
+```
+
+---
+
 ## Integración con PHPUnit y Pest
 
 El objetivo es que montar un test con LLM sea **una línea**, y que las aserciones hablen el idioma
@@ -405,7 +505,7 @@ Un `EmbeddingMatcher` opcional está previsto.
 - [x] Trait `InteractsWithLlm` para PHPUnit con 6 aserciones
 - [x] Expectativas nativas de Pest (verificadas contra Pest 3)
 - [x] `PlaceholderMatcher` para prompts con parámetros dinámicos
-- [ ] `LlmVcrBundle` para Symfony, con panel en el Web Profiler
+- [x] `LlmVcrBundle` para Symfony, con panel en el Web Profiler
 - [ ] `EmbeddingMatcher` con caché en disco
 - [ ] Soporte para respuestas en streaming y tool calls
 

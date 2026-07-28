@@ -7,8 +7,22 @@ y el versionado sigue [SemVer](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+### Añadido
+- **`LlmVcrBundle` para Symfony 7.4**: configuración declarativa, servicios
+  autoconfigurados y `PlatformFactory` inyectable.
+- **Panel en el Web Profiler** con modo, hit rate, tokens ahorrados y latencia
+  evitada. El badge se pone en rojo si se toca la red estando en modo replay.
+- Comando `llm-vcr:drift` para Symfony Console, con salida Markdown.
+- `RecordingPlatform::useCassette()` para fijar el nombre de la cassette.
+
+### Notas técnicas
+- Symfony se declara en `suggest`, nunca en `require`: quien use solo PHPUnit
+  no arrastra el framework. Hay un job de CI que lo verifica desinstalándolo.
+- Los nodos de configuración con claves arbitrarias (`custom_rules`,
+  `placeholders`) usan `normalizeKeys(false)`. Con `useAttributeAsKey()`
+  Symfony destruía las claves que son expresiones regulares.
+
 ### Pendiente
-- `LlmVcrBundle` para Symfony, con panel en el Web Profiler
 - `EmbeddingMatcher` con caché en disco
 - Soporte para respuestas en streaming y tool calls
 
