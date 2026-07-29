@@ -42,11 +42,11 @@
             </div>
             <div class="sf-toolbar-info-piece">
                 <b>Tokens saved</b>
-                <span>{{ collector.tokensSaved|number_format(0, ',', '.') }}</span>
+                <span>{{ collector.tokensSaved|number_format(0, '.', ',') }}</span>
             </div>
             <div class="sf-toolbar-info-piece">
                 <b>Time saved</b>
-                <span>{{ collector.latencySavedMs|number_format(0, ',', '.') }} ms</span>
+                <span>{{ collector.latencySavedMs|number_format(0, '.', ',') }} ms</span>
             </div>
         {% endset %}
 
@@ -98,11 +98,11 @@
 
     <div class="metrics">
         <div class="metric">
-            <span class="value">{{ collector.tokensSaved|number_format(0, ',', '.') }}</span>
+            <span class="value">{{ collector.tokensSaved|number_format(0, '.', ',') }}</span>
             <span class="label">Tokens saved</span>
         </div>
         <div class="metric">
-            <span class="value">{{ collector.latencySavedMs|number_format(0, ',', '.') }}<span class="unit">ms</span></span>
+            <span class="value">{{ collector.latencySavedMs|number_format(0, '.', ',') }}<span class="unit">ms</span></span>
             <span class="label">Latency avoided</span>
         </div>
         <div class="metric">

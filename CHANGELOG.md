@@ -7,6 +7,10 @@ y el versionado sigue [SemVer](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+### Corregido
+- Separador de miles del panel en formato inglés (`1,280` en lugar de `1.280`).
+  Con la notación española, un lector anglosajón lee "1.280 ms" como 1,28 ms.
+
 ### Cambiado
 - **Documentación y mensajes en inglés.** El README principal pasa a inglés
   (lengua franca del open source) con selector de idioma hacia `README.es.md`,
