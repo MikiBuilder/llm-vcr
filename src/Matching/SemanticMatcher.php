@@ -41,7 +41,7 @@ final class SemanticMatcher implements MatcherInterface
         private readonly array $extraNoise = [],
     ) {
         if ($threshold < 0.0 || $threshold > 1.0) {
-            throw new \InvalidArgumentException('El umbral debe estar entre 0.0 y 1.0.');
+            throw new \InvalidArgumentException('The threshold must be between 0.0 and 1.0.');
         }
     }
 

@@ -1,9 +1,11 @@
 # llm-vcr
 
-**Record & replay semántico para features de IA en PHP.**
+**English** · **[Español](README.es.md)**
 
-Graba las respuestas reales de tu LLM, reprodúcelas en CI sin red ni API key, y entérate
-cuando el proveedor cambie el modelo por debajo y rompa tus DTOs.
+**Semantic record & replay for AI features in PHP.**
+
+Record what your LLM actually returns, replay it in CI with no network and no API key,
+and find out when your provider silently changes the model and breaks your DTOs.
 
 [![CI](https://github.com/MikiBuilder/llm-vcr/actions/workflows/ci.yml/badge.svg)](https://github.com/MikiBuilder/llm-vcr/actions/workflows/ci.yml)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%209-brightgreen)](https://phpstan.org/)
@@ -12,69 +14,72 @@ cuando el proveedor cambie el modelo por debajo y rompa tus DTOs.
 
 ---
 
-## El problema
+## The problem
 
-Tienes un servicio que clasifica tickets con un LLM. Quieres testearlo. Y entonces:
+You have a service that classifies support tickets with an LLM. You want to test it.
+And then:
 
 ```php
-$result = $this->analyzer->analyze('No puedo acceder a mi cuenta');
+$result = $this->analyzer->analyze('I cannot access my account');
 
-$this->assertSame('acceso', $result->categoria); // 🎲 a veces pasa, a veces no
+$this->assertSame('access', $result->category); // 🎲 passes sometimes
 ```
 
-1. **No es determinista.** El mismo prompt devuelve texto distinto cada vez.
-2. **Cuesta dinero.** 200 tests × cada push × cada desarrollador.
-3. **Es lento.** Entre 0,5 y 3 segundos por llamada. Tu suite pasa de segundos a minutos.
-4. **Necesita red y una API key de producción en CI.** Si el proveedor tiene un incidente, tu build
-   se pone rojo sin que tú hayas roto nada.
-5. **Y lo peor: la deriva silenciosa.** El proveedor actualiza el modelo, `urgencia` empieza a llegar
-   como `"alta"` en vez de `4`, tu DTO tipado revienta en producción — **y tú no has tocado una sola
-   línea de código.** Ningún test lo detecta, porque tus mocks tienen congelado el valor viejo.
+1. **It is not deterministic.** The same prompt returns different text every time.
+2. **It costs money.** 200 tests × every push × every developer.
+3. **It is slow.** Between 0.5 and 3 seconds per call. Your suite goes from seconds to minutes.
+4. **It needs network access and a production API key in CI.** If your provider has an
+   incident, your build turns red without you breaking anything.
+5. **And the worst one: silent drift.** The provider updates the model, `urgency` starts
+   coming back as `"high"` instead of `4`, your typed DTO blows up in production — **and
+   you never touched a single line of code.** No test catches it, because your mocks have
+   the old value frozen in.
 
-## La solución
+## The solution
 
 ```php
 $platform = new RecordingPlatform(
-    inner: new GroqPlatform($apiKey),   // tu proveedor real
+    inner: new GroqPlatform($apiKey),   // your real provider
     cassetteDir: __DIR__ . '/cassettes',
-    mode: Mode::fromEnv(),              // record en local, replay en CI
+    mode: Mode::fromEnv(),              // record locally, replay in CI
 );
 ```
 
-Ya está. Tu código no cambia: `RecordingPlatform` implementa la misma interfaz.
+That is it. Your code does not change: `RecordingPlatform` implements the same interface.
 
-- **En local** graba las respuestas reales en ficheros JSON versionables.
-- **En CI** las reproduce desde disco: cero red, cero API key, cero coste.
-- **Cada noche** las reproduce contra el proveedor real y te avisa si algo cambió.
+- **Locally** it records real responses into versionable JSON files.
+- **In CI** it replays them from disk: no network, no API key, no cost.
+- **Every night** it replays them against the real provider and warns you if anything changed.
 
-## Qué lo hace distinto
+## What makes it different
 
-|  | `php-vcr` | Mocks a mano | **llm-vcr** |
+|  | `php-vcr` | Hand-written mocks | **llm-vcr** |
 |---|---|---|---|
-| Determinismo en CI | ✅ | ✅ | ✅ |
-| Tolera prompts que cambian | ❌ hash exacto | — | ✅ **similitud semántica** |
-| La respuesta es la real del modelo | ✅ | ❌ te la inventas | ✅ |
-| Redacta secretos y PII | ❌ | — | ✅ **por defecto** |
-| Detecta deriva del proveedor | ❌ | ❌ imposible | ✅ |
-| Entiende de modelos y tokens | ❌ | — | ✅ |
+| Deterministic in CI | ✅ | ✅ | ✅ |
+| Tolerates changing prompts | ❌ exact hash | — | ✅ **semantic similarity** |
+| The response is the model's real one | ✅ | ❌ you make it up | ✅ |
+| Redacts secrets and PII | ❌ | — | ✅ **by default** |
+| Detects provider drift | ❌ | ❌ impossible | ✅ |
+| Understands models and tokens | ❌ | — | ✅ |
 
-> **La clave:** `php-vcr` casa peticiones por hash exacto. Un prompt real lleva timestamps, UUIDs e
-> IDs que cambian en cada ejecución, así que la cassette se invalida en cuanto tocas una coma.
-> `llm-vcr` normaliza ese ruido y compara por **similitud de coseno**.
+> **The key insight:** `php-vcr` matches requests by exact hash. A real prompt carries
+> timestamps, UUIDs and IDs that change on every run, so the cassette is invalidated the
+> moment you touch a comma. `llm-vcr` normalises that noise and compares using
+> **cosine similarity**.
 
 ---
 
-## Instalación
+## Installation
 
 ```bash
 composer require --dev mikibuilder/llm-vcr
 ```
 
-Requiere PHP 8.2+ con `ext-json` y `ext-mbstring`. Sin dependencias de runtime.
+Requires PHP 8.2+ with `ext-json` and `ext-mbstring`. No runtime dependencies.
 
 ---
 
-## Empezar en 2 minutos (sin registrarte en nada)
+## Get started in 2 minutes (no sign-up required)
 
 ```bash
 git clone https://github.com/MikiBuilder/llm-vcr.git
@@ -83,37 +88,36 @@ composer install
 php examples/demo.php
 ```
 
-La demo enseña los seis comportamientos con una plataforma simulada. Sin API key, sin red.
+The demo shows all six behaviours using a simulated platform. No API key, no network.
 
-### Con un LLM real y gratuito
+### With a real, free LLM
 
-[Groq](https://console.groq.com/keys) da una clave gratis **sin tarjeta de crédito**
-(30 req/min, ~1.000 al día en el free tier).
+[Groq](https://console.groq.com/keys) gives you a free API key **with no credit card**
+(30 req/min, ~1,000 per day on the free tier).
 
 ```bash
-cp .env.example .env      # pega tu GROQ_API_KEY
-php examples/groq_record.php   # primera vez: llama a la API
-php examples/groq_record.php   # segunda: desde la cassette, sin red
+cp .env.example .env      # paste your GROQ_API_KEY
+php examples/groq_record.php   # first run: hits the API
+php examples/groq_record.php   # second run: from the cassette, no network
 ```
 
-### Con Docker
+### With Docker
 
 ```bash
 make build && make up && make install
-make demo     # demo sin API key
-make test     # 45 tests
-make check    # PHPStan nivel 9 + tests
+make demo     # demo without an API key
+make test     # 116 tests
+make check    # PHPStan level 9 + tests
 ```
 
 ---
 
-## Integración con Symfony
+## Symfony integration
 
-El bundle añade configuración declarativa y un **panel en el Web Profiler** con
-las métricas de cada petición.
+The bundle adds declarative configuration and a **Web Profiler panel** with per-request
+metrics.
 
-Symfony es una dependencia **opcional**: si solo usas PHPUnit o Pest, no
-arrastras nada.
+Symfony is an **optional** dependency: if you only use PHPUnit or Pest, you pull in nothing.
 
 ```php
 // config/bundles.php
@@ -134,17 +138,17 @@ llm_vcr:
         threshold: 0.82
 
     redaction:
-        pii: true              # las credenciales se redactan SIEMPRE
+        pii: true              # credentials are ALWAYS redacted
 ```
 
 ```yaml
 # config/packages/test/llm_vcr.yaml
-# En tests nunca se toca la red: si falta una cassette, el test falla.
+# Tests never touch the network: if a cassette is missing, the test fails.
 llm_vcr:
     mode: replay
 ```
 
-Y en tu servicio:
+And in your service:
 
 ```php
 use MikiBuilder\LlmVcr\Bridge\Symfony\PlatformFactory;
@@ -153,16 +157,16 @@ final class TicketAnalyzer
 {
     public function __construct(
         private PlatformFactory $vcr,
-        private MiClienteLlm $cliente,
+        private MyLlmClient $client,
     ) {}
 
-    public function analyze(string $texto): TicketDto
+    public function analyze(string $text): TicketDto
     {
-        $platform = $this->vcr->wrap($this->cliente, cassette: 'tickets');
+        $platform = $this->vcr->wrap($this->client, cassette: 'tickets');
 
         $result = $platform->invoke('llama-3.1-8b-instant', [
-            ['role' => 'system', 'content' => 'Clasifica tickets. Responde JSON.'],
-            ['role' => 'user',   'content' => $texto],
+            ['role' => 'system', 'content' => 'Classify tickets. Respond with JSON.'],
+            ['role' => 'user',   'content' => $text],
         ]);
 
         return TicketDto::fromArray($result->asStructured() ?? []);
@@ -170,49 +174,48 @@ final class TicketAnalyzer
 }
 ```
 
-### El panel del Profiler
+### The Profiler panel
 
-En la barra de depuración verás de un vistazo cuántas invocaciones vinieron de
-disco y cuántas tocaron la API. El panel desglosa:
+The debug toolbar shows at a glance how many invocations came from disk and how many hit
+the API. The panel breaks it down:
 
-| Métrica | Qué te dice |
+| Metric | What it tells you |
 |---|---|
-| **Modo** | `record`, `replay`, `bypass` o `refresh` |
-| **Desde cassette** / **Llamadas reales** | Si esta petición gastó cuota |
-| **Hit rate** | Porcentaje servido desde disco |
-| **Tokens no gastados** | Ahorro acumulado |
-| **Latencia evitada** | Milisegundos que no esperaste |
+| **Mode** | `record`, `replay`, `bypass` or `refresh` |
+| **From cassette** / **Live calls** | Whether this request burned quota |
+| **Hit rate** | Percentage served from disk |
+| **Tokens saved** | Cumulative savings |
+| **Latency avoided** | Milliseconds you did not wait for |
 
-El badge se pone **rojo** si se hicieron llamadas reales estando en modo
-`replay`: normalmente significa que falta grabar una cassette.
+The badge turns **red** if live calls were made while in `replay` mode: usually it means
+a cassette is missing.
 
-### Comando de consola
+### Console command
 
 ```bash
-bin/console llm-vcr:drift              # ¿ha cambiado el modelo del proveedor?
-bin/console llm-vcr:drift --markdown   # tabla para pegar en una PR
+bin/console llm-vcr:drift              # has the provider's model changed?
+bin/console llm-vcr:drift --markdown   # table to paste into a PR
 ```
 
-Devuelve código de salida 1 si detecta deriva ALTA o CRÍTICA, así que puedes
-encadenarlo en un cron nocturno y romper el build.
+It exits with code 1 if it detects HIGH or CRITICAL drift, so you can chain it into a
+nightly cron and break the build.
 
-Necesita que tu cliente LLM esté registrado con el alias
-`llm_vcr.live_platform`:
+It needs your LLM client registered under the `llm_vcr.live_platform` alias:
 
 ```yaml
 services:
     llm_vcr.live_platform:
-        alias: App\Llm\MiClienteLlm
+        alias: App\Llm\MyLlmClient
 ```
 
 ---
 
-## Integración con PHPUnit y Pest
+## PHPUnit and Pest integration
 
-El objetivo es que montar un test con LLM sea **una línea**, y que las aserciones hablen el idioma
-del problema en vez de obligarte a escribir plomería.
+The goal is that setting up an LLM test takes **one line**, and that assertions speak the
+language of the problem instead of forcing you to write plumbing.
 
-### PHPUnit — el trait `InteractsWithLlm`
+### PHPUnit — the `InteractsWithLlm` trait
 
 ```php
 use MikiBuilder\LlmVcr\Testing\InteractsWithLlm;
@@ -221,227 +224,188 @@ final class TicketTest extends TestCase
 {
     use InteractsWithLlm;
 
-    public function testClasificaUnProblemaDeAcceso(): void
+    public function testClassifiesAnAccessProblem(): void
     {
         $platform = $this->recordLlm(GroqPlatform::fromEnv());
 
         $result = $platform->invoke('llama-3.1-8b-instant', [
-            ['role' => 'system', 'content' => 'Clasifica tickets. Responde JSON.'],
-            ['role' => 'user',   'content' => 'No puedo acceder a mi cuenta.'],
+            ['role' => 'system', 'content' => 'Classify tickets. Respond with JSON.'],
+            ['role' => 'user',   'content' => 'I cannot access my account.'],
         ]);
 
         $this->assertNoLiveLlmCalls();
         $this->assertLlmJsonShape([
-            'categoria' => 'string',
-            'urgencia'  => 'int',
+            'category' => 'string',
+            'urgency'  => 'int',
         ], $result);
     }
 }
 ```
 
-Sin rutas que configurar: las cassettes van a `<directorio-del-test>/cassettes/` y el nombre sale
-de la clase y el método (`ticket--clasifica-un-problema-de-acceso.json`).
+No paths to configure: cassettes go to `<test-directory>/cassettes/` and the name is
+derived from the class and method (`ticket--classifies-an-access-problem.json`).
 
-| Aserción | Qué comprueba |
+| Assertion | What it checks |
 |---|---|
-| `assertNoLiveLlmCalls()` | El test **no ha tocado la red**. Ponla en tu suite y CI te avisará el día que alguien queme cuota sin querer |
-| `assertLlmJsonShape([...], $r)` | La **forma** del JSON: claves y tipos. Admite `'float\|null'` y rutas `'meta.score'` |
-| `assertLlmValueIn([...], 'campo', $r)` | El valor está en un dominio cerrado (enums del modelo) |
-| `assertLlmJson($r)` | Es JSON válido, y te lo devuelve como array |
-| `assertResultCameFromCassette($r)` | La respuesta vino de disco, no de la API |
-| `assertLlmCallsWereReplayed(n)` | Se reprodujeron exactamente `n` interacciones |
+| `assertNoLiveLlmCalls()` | The test **did not touch the network**. Put it in your suite and CI will warn you the day someone burns quota by accident |
+| `assertLlmJsonShape([...], $r)` | The JSON **shape**: keys and types. Supports `'float\|null'` and paths like `'meta.score'` |
+| `assertLlmValueIn([...], 'field', $r)` | The value belongs to a closed set (model enums) |
+| `assertLlmJson($r)` | It is valid JSON, returned to you as an array |
+| `assertResultCameFromCassette($r)` | The response came from disk, not the API |
+| `assertLlmCallsWereReplayed(n)` | Exactly `n` interactions were replayed |
 
-### Pest — expectativas nativas
+### Pest — native expectations
 
 ```php
 use function MikiBuilder\LlmVcr\Testing\recordLlm;
 
-it('clasifica un problema de acceso', function () {
+it('classifies an access problem', function () {
     $platform = recordLlm(GroqPlatform::fromEnv(), cassette: 'tickets');
 
     $result = $platform->invoke('llama-3.1-8b-instant', [...]);
 
     expect($platform)->toHaveMadeNoLiveCalls()->toHaveReplayed(1);
     expect($result)->toBeLlmJson()
-                   ->toMatchLlmShape(['categoria' => 'string', 'urgencia' => 'int'])
-                   ->toHaveLlmValueIn(['acceso', 'facturacion'], 'categoria');
+                   ->toMatchLlmShape(['category' => 'string', 'urgency' => 'int'])
+                   ->toHaveLlmValueIn(['access', 'billing'], 'category');
 });
 ```
 
-Se registran solas al instalar el paquete: no hay que tocar `Pest.php`.
-Disponibles: `toBeLlmJson()`, `toMatchLlmShape()`, `toHaveLlmValueIn()`, `toComeFromCassette()`,
-`toHaveMadeNoLiveCalls()`, `toHaveReplayed()`.
+They register themselves when you install the package: no need to touch `Pest.php`.
+Available: `toBeLlmJson()`, `toMatchLlmShape()`, `toHaveLlmValueIn()`,
+`toComeFromCassette()`, `toHaveMadeNoLiveCalls()`, `toHaveReplayed()`.
 
-> **Por qué validar la forma y no el valor:** el valor que devuelve un LLM no es determinista, pero
-> el **contrato** sí debe serlo. `toMatchLlmShape()` falla cuando `urgencia` pasa de `int` a `string`
-> — que es exactamente el bug que rompe tu DTO en producción.
+> **Why assert on shape instead of value:** the value an LLM returns is not deterministic,
+> but the **contract** must be. `toMatchLlmShape()` fails when `urgency` goes from `int` to
+> `string` — which is exactly the bug that breaks your DTO in production.
 
-### Prompts con parámetros dinámicos
+### Prompts with dynamic parameters
 
-Tres estrategias, de más estricta a más tolerante:
+Three strategies, from strictest to most tolerant:
 
 ```php
-// 1. Exacta — el prompt no varía nunca
+// 1. Exact — the prompt never varies
 new ExactMatcher();
 
-// 2. Placeholders — TÚ declaras qué es variable. Cero falsos positivos.
+// 2. Placeholders — YOU declare what varies. Zero false positives.
 new PlaceholderMatcher([
-    'order_id' => '/PED-\d+/',
-    'importe'  => '/\d+,\d{2} ?€/',
+    'order_id' => '/ORD-\d+/',
+    'amount'   => '/\d+\.\d{2} ?€/',
 ]);
-// "Revisa el pedido PED-4417 por 89,90 €"
-// "Revisa el pedido PED-9902 por 12,50 €"  → misma cassette
+// "Review order ORD-4417 for 89.90 €"
+// "Review order ORD-9902 for 12.50 €"  → same cassette
 
-// 3. Semántica — tolera cambios de redacción (por defecto)
+// 3. Semantic — tolerates rewording (default)
 new SemanticMatcher(threshold: 0.82);
 ```
 
-`PlaceholderMatcher` es el punto medio que suele querer la gente: sigue siendo una comparación
-**exacta y determinista**, revisable en una PR, pero inmune a los datos que tú marques como
-variables. Si cambia algo que *no* declaraste, no casa — y eso es lo correcto.
-Ya trae fechas, horas y UUIDs cubiertos por defecto.
+`PlaceholderMatcher` is the middle ground most people actually want: still an **exact,
+deterministic** comparison, reviewable in a PR, but immune to the data you mark as
+variable. If something you did *not* declare changes, it does not match — and that is the
+correct behaviour. Dates, times and UUIDs are covered out of the box.
 
 ---
 
-## Uso
+## Usage
 
-### Los cuatro modos
+### The four modes
 
-| Modo | Cuándo | Comportamiento |
+| Mode | When | Behaviour |
 |---|---|---|
-| `Mode::Record` | Desarrollo local | Graba si no existe; si existe, reproduce |
-| `Mode::Replay` | **CI** | Solo reproduce. Si falta, **falla con un mensaje que explica cómo arreglarlo** |
-| `Mode::Bypass` | Depuración | Ignora cassettes, siempre API real |
-| `Mode::Refresh` | Actualizar fixtures | Regraba todo desde cero |
+| `Mode::Record` | Local development | Records if missing; replays if present |
+| `Mode::Replay` | **CI** | Replay only. If missing, **fails with a message explaining how to fix it** |
+| `Mode::Bypass` | Debugging | Ignores cassettes, always hits the real API |
+| `Mode::Refresh` | Updating fixtures | Re-records everything from scratch |
 
 ```php
-$mode = Mode::fromEnv();                    // lee LLM_VCR_MODE
+$mode = Mode::fromEnv();                    // reads LLM_VCR_MODE
 $mode = Mode::fromEnv(default: Mode::Replay);
 ```
 
-### En PHPUnit
+Run once with `LLM_VCR_MODE=record`, commit the cassettes, and from then on CI runs for free.
 
-```php
-final class TicketAnalyzerTest extends TestCase
-{
-    private RecordingPlatform $platform;
-
-    protected function setUp(): void
-    {
-        $this->platform = new RecordingPlatform(
-            inner: GroqPlatform::fromEnv(),
-            cassetteDir: __DIR__ . '/cassettes',
-            mode: Mode::fromEnv(default: Mode::Replay),
-        );
-    }
-
-    public function testClasificaUnProblemaDeAcceso(): void
-    {
-        $analyzer = new TicketAnalyzer($this->platform);
-
-        $result = $analyzer->analyze('No puedo acceder a mi cuenta desde ayer');
-
-        self::assertSame('acceso', $result->categoria);
-        self::assertGreaterThanOrEqual(3, $result->urgencia);
-    }
-}
-```
-
-Ejecuta una vez con `LLM_VCR_MODE=record`, commitea las cassettes, y a partir de ahí CI corre gratis.
-
-### Detección de deriva
+### Drift detection
 
 ```bash
-php bin/llm-vcr drift               # informe en consola
-php bin/llm-vcr drift --markdown    # tabla para pegar en una PR
-php bin/llm-vcr stats               # resumen de las cassettes
+php bin/llm-vcr drift               # console report
+php bin/llm-vcr drift --markdown    # table to paste into a PR
+php bin/llm-vcr stats               # summary of recorded cassettes
 ```
 
-Sale con **código 1** si detecta deriva ALTA o CRÍTICA, así que rompe el build.
-El workflow `.github/workflows/drift.yml` lo ejecuta cada noche y abre un issue automáticamente.
-
-Ejemplo de salida real:
+Real output:
 
 ```
-🔴  CRITICA   sim 0.79  cambio de tipo en "urgencia": int -> string | campo nuevo: "confianza" (float)
-🟢  OK        sim 1.00  sin cambios de esquema
-🟡  MEDIA     sim 0.60  sin cambios de esquema
+🔴  CRITICAL  sim 0.79  type change in "urgency": int -> string | new field: "confidence" (float)
+🟢  OK        sim 1.00  no schema changes
+🟡  MEDIUM    sim 0.60  no schema changes
 ```
 
-Ese `int -> string` es el bug que te habría costado una guardia a las 3 de la mañana.
+That `int -> string` is the bug that would have cost you a 3 a.m. page.
+
+The `.github/workflows/drift.yml` workflow runs it nightly and **opens an issue
+automatically**.
 
 ---
 
-## Configuración
+## Configuration
 
-### Matchers
+### Redaction
 
-```php
-new SemanticMatcher(threshold: 0.82);  // por defecto
-new SemanticMatcher(threshold: 0.95);  // más estricto
-new ExactMatcher();                    // hash exacto, tolerancia cero
+Enabled **by default**, because cassettes get committed to git.
 
-// Normalizar ruido propio de tu dominio
-new SemanticMatcher(extraNoise: ['/\bPED-\d+\b/' => '<pedido>']);
-```
-
-### Redacción
-
-Activada **por defecto**, porque las cassettes se commitean a git.
-
-Detecta: claves de OpenAI/Groq/GitHub/AWS, JWT, Bearer tokens, emails, teléfonos españoles,
-DNI, NIE, IBAN y números de tarjeta.
+Detects: OpenAI/Groq/GitHub/AWS keys, JWTs, Bearer tokens, emails, phone numbers,
+national ID numbers, IBANs and card numbers.
 
 ```php
-new Redactor();                    // credenciales + PII
-Redactor::credentialsOnly();       // solo credenciales
-new Redactor(customRules: ['/\bEXP-\d{4}\b/' => '<REDACTED:EXPEDIENTE>']);
+new Redactor();                    // credentials + PII
+Redactor::credentialsOnly();       // credentials only
+new Redactor(customRules: ['/\bCASE-\d{4}\b/' => '<REDACTED:CASE>']);
 ```
 
-### Otros proveedores
+### Other providers
 
-`GroqPlatform` habla el dialecto OpenAI, así que sirve para cualquier endpoint compatible:
+`GroqPlatform` speaks the OpenAI dialect, so it works with any compatible endpoint:
 
 ```php
 new GroqPlatform($key, baseUrl: 'https://openrouter.ai/api/v1');
 new GroqPlatform('ollama', baseUrl: 'http://localhost:11434/v1');
 ```
 
-Para cualquier otro, implementa `PlatformInterface` — son tres líneas.
+For anything else, implement `PlatformInterface` — it is three lines.
 
 ---
 
-## Cómo funciona
+## How it works
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Tu código  →  TicketAnalyzer                           │
+│  Your code  →  TicketAnalyzer                           │
 │                      │                                  │
 │                      ▼                                  │
 │          ┌───────────────────────┐                      │
-│          │  RecordingPlatform    │  ← decorador         │
+│          │  RecordingPlatform    │  ← decorator         │
 │          │  (PlatformInterface)  │                      │
 │          └───────────┬───────────┘                      │
 │                      │                                  │
 │      ┌───────────────┼───────────────┐                  │
 │      ▼               ▼               ▼                  │
 │  SemanticMatcher  Redactor      Cassette (.json)        │
-│  coseno +         claves, PII   versionable en git      │
-│  normalización                                          │
+│  cosine +         keys, PII     versioned in git        │
+│  normalisation                                          │
 │      │                                                  │
 │      ▼  (miss)                                          │
-│  GroqPlatform → API real                                │
+│  GroqPlatform → real API                                │
 └─────────────────────────────────────────────────────────┘
 ```
 
-Es un **decorador**, no un fork. Sustitución de Liskov pura: envuelve cualquier implementación de
-`PlatformInterface` sin que el código de negocio se entere.
+It is a **decorator**, not a fork. Pure Liskov substitution: it wraps any implementation
+of `PlatformInterface` without your business code noticing.
 
-### Una cassette por dentro
+### A cassette from the inside
 
 ```json
 {
-  "cassette": "clasifica-tickets-de-soporte-9a89bea9",
+  "cassette": "classify-support-tickets-9a89bea9",
   "version": 1,
   "interactions": [
     {
@@ -449,12 +413,12 @@ Es un **decorador**, no un fork. Sustitución de Liskov pura: envuelve cualquier
       "request": {
         "model": "llama-3.1-8b-instant",
         "messages": [
-          { "role": "system", "content": "Clasifica tickets de soporte en JSON." },
-          { "role": "user", "content": "Soy <REDACTED:EMAIL>, tel <REDACTED:PHONE>, no puedo acceder." }
+          { "role": "system", "content": "Classify support tickets as JSON." },
+          { "role": "user", "content": "I'm <REDACTED:EMAIL>, tel <REDACTED:PHONE>, cannot log in." }
         ]
       },
       "response": {
-        "text": "{\"categoria\":\"acceso\",\"urgencia\":4}",
+        "text": "{\"category\":\"access\",\"urgency\":4}",
         "input_tokens": 27,
         "output_tokens": 15
       }
@@ -463,60 +427,62 @@ Es un **decorador**, no un fork. Sustitución de Liskov pura: envuelve cualquier
 }
 ```
 
-Legible, diffable en una PR, y sin un solo secreto.
+Readable, diffable in a PR, and without a single secret.
 
 ---
 
-## Preguntas frecuentes
+## FAQ
 
-**¿Debo commitear las cassettes?**
-Sí. Son el fixture del proyecto: sin ellas, CI no puede correr en modo replay.
-Por eso la redacción va activada por defecto.
+**Should I commit the cassettes?**
+Yes. They are the project's fixtures: without them, CI cannot run in replay mode. That is
+exactly why redaction is on by default.
 
-**¿Y si cambio el prompt?**
-Si el cambio es menor, el matcher semántico lo absorbe. Si es grande, el test falla con un mensaje
-que te dice exactamente qué hacer. Regrabas con `LLM_VCR_MODE=record` y commiteas.
+**What if I change the prompt?**
+If the change is small, the semantic matcher absorbs it. If it is large, the test fails
+with a message telling you exactly what to do. Re-record with `LLM_VCR_MODE=record` and
+commit.
 
-**¿Reemplaza a los evals?**
-No, son complementarios. Los evals miden **calidad** (¿la respuesta es buena?).
-`llm-vcr` resuelve **determinismo, coste y deriva**. Puedes usar los dos.
+**Does it replace evals?**
+No, they are complementary. Evals measure **quality** (is the answer good?). `llm-vcr`
+solves **determinism, cost and drift**. You can use both.
 
-**¿Placeholders o similitud semántica?**
-Empieza por `PlaceholderMatcher` si sabes exactamente qué partes del prompt varían (IDs, importes,
-fechas de negocio): es determinista y no da falsos positivos. Usa `SemanticMatcher` cuando el prompt
-se redacta de formas distintas o lo genera otro sistema.
+**Placeholders or semantic similarity?**
+Start with `PlaceholderMatcher` if you know exactly which parts of the prompt vary (IDs,
+amounts, business dates): it is deterministic and produces no false positives. Use
+`SemanticMatcher` when the prompt is worded differently each time or generated by another
+system.
 
-**¿Funciona con Symfony AI?**
-Sí. `RecordingPlatform` es un decorador sobre una interfaz mínima, así que basta con un adaptador
-de tres líneas. Un bundle nativo está en la hoja de ruta.
+**Does it work with Symfony AI?**
+Yes. `RecordingPlatform` is a decorator over a minimal interface, so a three-line adapter
+is enough. A native bundle is included for the rest of the integration.
 
-**¿Por qué no usar embeddings para el matching?**
-Porque requeriría una llamada de red justo en el camino que intenta evitarla. El coseno sobre
-bag-of-words normalizado funciona sorprendentemente bien y es instantáneo.
-Un `EmbeddingMatcher` opcional está previsto.
+**Why not use embeddings for matching?**
+Because it would require a network call on the very path that is trying to avoid one.
+Cosine similarity over normalised bag-of-words works surprisingly well and is instant.
+An optional `EmbeddingMatcher` is on the roadmap.
 
 ---
 
-## Hoja de ruta
+## Roadmap
 
-- [x] Núcleo: record/replay, matching semántico, redacción, deriva
-- [x] CLI `llm-vcr drift` con salida Markdown para PRs
-- [x] GitHub Actions: CI en replay + cron nocturno de deriva
-- [x] Trait `InteractsWithLlm` para PHPUnit con 6 aserciones
-- [x] Expectativas nativas de Pest (verificadas contra Pest 3)
-- [x] `PlaceholderMatcher` para prompts con parámetros dinámicos
-- [x] `LlmVcrBundle` para Symfony, con panel en el Web Profiler
-- [ ] `EmbeddingMatcher` con caché en disco
-- [ ] Soporte para respuestas en streaming y tool calls
+- [x] Core: record/replay, semantic matching, redaction, drift detection
+- [x] `llm-vcr drift` CLI with Markdown output for PRs
+- [x] GitHub Actions: CI in replay mode + nightly drift cron
+- [x] `InteractsWithLlm` trait for PHPUnit with 6 assertions
+- [x] Native Pest expectations (verified against Pest 3)
+- [x] `PlaceholderMatcher` for prompts with dynamic parameters
+- [x] `LlmVcrBundle` for Symfony, with Web Profiler panel
+- [ ] `EmbeddingMatcher` with on-disk cache
+- [ ] Support for streaming responses and tool calls
 
-## Contribuir
+## Contributing
 
-Los PRs son bienvenidos. El listón: **PHPStan nivel 9 y tests en verde**.
+PRs are welcome. The bar: **PHPStan level 9 and green tests**.
 
 ```bash
-composer check     # análisis estático + tests
+composer check     # static analysis + tests
 ```
 
-## Licencia
+## License
 
 MIT — [MikiBuilder](https://github.com/MikiBuilder)

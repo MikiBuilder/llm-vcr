@@ -15,12 +15,12 @@ final class CassetteNotFoundException extends LlmVcrException
     public static function forCassette(string $name, float $bestSimilarity, float $threshold): self
     {
         return new self(sprintf(
-            "llm-vcr: no hay coincidencia en la cassette \"%s\" (modo replay).\n"
-            . "  Mejor similitud encontrada: %.2f (umbral: %.2f)\n"
-            . "  Soluciones:\n"
-            . "    1. Graba la interacción:  LLM_VCR_MODE=record vendor/bin/phpunit\n"
-            . "    2. Commitea la cassette generada.\n"
-            . "    3. Si el prompt cambió mucho a propósito, baja el umbral del matcher.",
+            "llm-vcr: no match found in cassette \"%s\" (replay mode).\n"
+            . "  Best similarity found: %.2f (threshold: %.2f)\n"
+            . "  How to fix it:\n"
+            . "    1. Record the interaction:  LLM_VCR_MODE=record vendor/bin/phpunit\n"
+            . "    2. Commit the generated cassette.\n"
+            . "    3. If the prompt changed a lot on purpose, lower the matcher threshold.",
             $name,
             $bestSimilarity,
             $threshold,

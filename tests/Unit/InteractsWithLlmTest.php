@@ -107,7 +107,7 @@ final class InteractsWithLlmTest extends TestCase
         $platform->invoke('llama-3.1-8b-instant', $this->mensajes());
 
         $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessageMatches('/0 llamadas reales/');
+        $this->expectExceptionMessageMatches('/0 live calls/');
 
         $this->assertNoLiveLlmCalls();
     }
@@ -142,7 +142,7 @@ final class InteractsWithLlmTest extends TestCase
         $result = $platform->invoke('llama-3.1-8b-instant', $this->mensajes());
 
         $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessageMatches('/es string pero se esperaba int/');
+        $this->expectExceptionMessageMatches('/is string but int was expected/');
 
         $this->assertLlmJsonShape(['urgencia' => 'int'], $result);
     }
@@ -173,7 +173,7 @@ final class InteractsWithLlmTest extends TestCase
         $result = $platform->invoke('llama-3.1-8b-instant', $this->mensajes());
 
         $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessageMatches('/Falta la clave "urgencia"/');
+        $this->expectExceptionMessageMatches('/Missing key "urgencia"/');
 
         $this->assertLlmJsonShape(['urgencia' => 'int'], $result);
     }

@@ -29,8 +29,8 @@ final class GroqPlatform implements PlatformInterface
     ) {
         if (trim($apiKey) === '') {
             throw new \InvalidArgumentException(
-                'Falta la API key. Consigue una gratis en https://console.groq.com/keys '
-                . 'y expórtala como GROQ_API_KEY.',
+                'Missing API key. Get a free one at https://console.groq.com/keys '
+                . 'and export it as GROQ_API_KEY.',
             );
         }
     }
@@ -41,8 +41,8 @@ final class GroqPlatform implements PlatformInterface
 
         if (!is_string($key) || trim($key) === '') {
             throw new \InvalidArgumentException(sprintf(
-                'La variable de entorno %s no está definida. '
-                . 'Consigue una clave gratuita en https://console.groq.com/keys',
+                'The %s environment variable is not set. '
+                . 'Get a free key at https://console.groq.com/keys',
                 $variable,
             ));
         }
@@ -82,7 +82,7 @@ final class GroqPlatform implements PlatformInterface
 
         if ($raw === false) {
             throw new TransportException(sprintf(
-                'No se pudo contactar con el proveedor en %s. ¿Hay conexión de red?',
+                'Could not reach the provider at %s. Is there network connectivity?',
                 $this->baseUrl,
             ));
         }
@@ -97,14 +97,14 @@ final class GroqPlatform implements PlatformInterface
 
         if ($status === 429) {
             throw new TransportException(
-                'Rate limit alcanzado en el free tier. Espera un minuto o usa un modelo '
-                . 'con más cuota (llama-3.1-8b-instant).',
+                'Rate limit reached on the free tier. Wait a minute or use a model '
+                . 'with a higher quota (llama-3.1-8b-instant).',
             );
         }
 
         if ($status >= 400) {
             throw new TransportException(sprintf(
-                'El proveedor respondió %d: %s',
+                'The provider responded %d: %s',
                 $status,
                 mb_substr($raw, 0, 400),
             ));
@@ -120,7 +120,7 @@ final class GroqPlatform implements PlatformInterface
             $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
             throw new TransportException(
-                'Respuesta no es JSON válido: ' . mb_substr($raw, 0, 200),
+                'Response is not valid JSON: ' . mb_substr($raw, 0, 200),
                 previous: $e,
             );
         }
@@ -129,7 +129,7 @@ final class GroqPlatform implements PlatformInterface
         $choices = is_array($data['choices'] ?? null) ? $data['choices'] : [];
 
         if ($choices === []) {
-            throw new TransportException('La respuesta no contiene "choices".');
+            throw new TransportException('The response does not contain "choices".');
         }
 
         /** @var array<string, mixed> $message */

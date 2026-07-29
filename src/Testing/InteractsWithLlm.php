@@ -120,7 +120,7 @@ trait InteractsWithLlm
     {
         if ($this->llmPlatform === null) {
             Assert::fail(
-                'No hay ninguna plataforma LLM registrada. Llama primero a $this->recordLlm(...).',
+                'No LLM platform registered. Call $this->recordLlm(...) first.',
             );
         }
 
@@ -143,8 +143,8 @@ trait InteractsWithLlm
             0,
             $stats['live'],
             $message !== '' ? $message : sprintf(
-                'Se esperaban 0 llamadas reales al proveedor, pero hubo %d. '
-                . 'Falta grabar una cassette o el prompt cambió demasiado.',
+                'Expected 0 live calls to the provider, but there were %d. '
+                . 'A cassette is missing, or the prompt changed too much.',
                 $stats['live'],
             ),
         );
@@ -161,7 +161,7 @@ trait InteractsWithLlm
     {
         Assert::assertTrue(
             $result->fromCassette,
-            $message !== '' ? $message : 'Se esperaba una respuesta servida desde la cassette.',
+            $message !== '' ? $message : 'Expected a response served from the cassette.',
         );
     }
 
@@ -177,7 +177,7 @@ trait InteractsWithLlm
         Assert::assertIsArray(
             $data,
             $message !== '' ? $message : sprintf(
-                "La respuesta del modelo no es JSON válido:\n%s",
+                "The model response is not valid JSON:\n%s",
                 mb_substr($result->text, 0, 300),
             ),
         );
@@ -209,7 +209,7 @@ trait InteractsWithLlm
             Assert::assertNotSame(
                 self::MISSING,
                 $value,
-                sprintf('Falta la clave "%s" en la respuesta del modelo.', $path),
+                sprintf('Missing key "%s" in the model response.', $path),
             );
 
             $actual = get_debug_type($value);
@@ -219,8 +219,8 @@ trait InteractsWithLlm
                 $actual,
                 $allowed,
                 sprintf(
-                    'La clave "%s" es %s pero se esperaba %s. '
-                    . 'Si el proveedor cambió el modelo, esto es deriva: revisa `llm-vcr drift`.',
+                    'Key "%s" is %s but %s was expected. '
+                    . 'If the provider changed the model, this is drift: check `llm-vcr drift`.',
                     $path,
                     $actual,
                     $expectedTypes,
@@ -242,12 +242,12 @@ trait InteractsWithLlm
         $data = $this->assertLlmJson($result);
         $value = self::valueAtPath($data, $path);
 
-        Assert::assertNotSame(self::MISSING, $value, sprintf('Falta la clave "%s".', $path));
+        Assert::assertNotSame(self::MISSING, $value, sprintf('Missing key "%s".', $path));
 
         Assert::assertContains(
             $value,
             $allowed,
-            sprintf('El valor de "%s" no está entre los permitidos.', $path),
+            sprintf('The value of "%s" is not among the allowed ones.', $path),
         );
     }
 

@@ -1,8 +1,21 @@
 {
     "name": "mikibuilder/llm-vcr",
-    "description": "Record & replay semántico para features de IA en PHP. Graba respuestas reales de tu LLM, reprodúcelas en CI sin red ni API key, y detecta cuándo el proveedor cambia el modelo por debajo.",
+    "description": "Semantic record & replay for AI features in PHP. Record real LLM responses, replay them in CI with no network and no API key, and detect when your provider silently changes the model.",
     "type": "library",
-    "keywords": ["llm", "ai", "testing", "vcr", "cassette", "record", "replay", "drift", "openai", "groq", "symfony", "php"],
+    "keywords": [
+        "llm",
+        "ai",
+        "testing",
+        "vcr",
+        "cassette",
+        "record",
+        "replay",
+        "drift",
+        "openai",
+        "groq",
+        "symfony",
+        "php"
+    ],
     "homepage": "https://github.com/MikiBuilder/llm-vcr",
     "license": "MIT",
     "authors": [
@@ -34,9 +47,9 @@
         "symfony/web-profiler-bundle": "^7.4"
     },
     "suggest": {
-        "ext-curl": "Para usar GroqPlatform y otros clientes HTTP reales (si no, se usa el transporte por streams)",
-        "pestphp/pest": "Para las expectativas toBeLlmJson(), toMatchLlmShape() y toHaveMadeNoLiveCalls()",
-        "symfony/framework-bundle": "Para usar LlmVcrBundle: configuración declarativa y panel en el Web Profiler"
+        "ext-curl": "To use GroqPlatform and other real HTTP clients (otherwise the stream transport is used)",
+        "pestphp/pest": "For the toBeLlmJson(), toMatchLlmShape() and toHaveMadeNoLiveCalls() expectations",
+        "symfony/framework-bundle": "To use LlmVcrBundle: declarative configuration and Web Profiler panel"
     },
     "autoload": {
         "psr-4": {

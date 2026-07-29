@@ -62,7 +62,7 @@ switch ($command) {
         $files = $findCassettes($dir);
 
         if ($files === []) {
-            fwrite(STDERR, sprintf("No hay cassettes en %s\n", $dir));
+            fwrite(STDERR, sprintf("No cassettes found in %s\n", $dir));
             exit(1);
         }
 
@@ -88,11 +88,11 @@ switch ($command) {
         $markdown = isset($options['markdown']);
 
         if ($markdown) {
-            echo "## Informe de deriva — llm-vcr\n\n";
-            echo "| Severidad | Modelo | Similitud | Cambios |\n";
+            echo "## Drift report — llm-vcr\n\n";
+            echo "| Severity | Model | Similarity | Changes |\n";
             echo "|---|---|---|---|\n";
         } else {
-            echo "\nInforme de deriva (" . count($all) . " interacciones)\n";
+            echo "\nDrift report (" . count($all) . " interactions)\n";
             echo str_repeat('─', 70) . "\n";
         }
 
@@ -123,8 +123,8 @@ switch ($command) {
         if (!$markdown) {
             echo str_repeat('─', 70) . "\n";
             echo $worst === 0
-                ? "Sin deriva significativa.\n\n"
-                : "DERIVA DETECTADA — revisa los prompts y regraba las cassettes.\n\n";
+                ? "No significant drift.\n\n"
+                : "DRIFT DETECTED — review the prompts and re-record the cassettes.\n\n";
         }
 
         exit($worst);
@@ -143,23 +143,23 @@ switch ($command) {
         }
 
         printf("\nCassettes:     %d\n", count($files));
-        printf("Interacciones: %d\n", $interactions);
-        printf("Tokens que NO se gastan en cada ejecución de la suite: %d\n\n", $tokens);
+        printf("Interactions:  %d\n", $interactions);
+        printf("Tokens NOT spent on every suite run: %d\n\n", $tokens);
         exit(0);
 
     default:
         echo <<<TXT
 
-        llm-vcr — record & replay semántico para features de IA en PHP
+        llm-vcr — semantic record & replay for AI features in PHP
 
-        USO:
+        USAGE:
           bin/llm-vcr drift [--dir=cassettes] [--markdown]
-              Reproduce las cassettes contra el proveedor real y detecta
-              si el modelo ha cambiado de comportamiento.
-              Sale con código 1 si hay deriva ALTA o CRÍTICA.
+              Replays the cassettes against the real provider and detects
+              whether the model changed its behaviour.
+              Exits with code 1 on HIGH or CRITICAL drift.
 
           bin/llm-vcr stats [--dir=cassettes]
-              Resumen de las cassettes grabadas.
+              Summary of the recorded cassettes.
 
         TXT;
         exit(0);

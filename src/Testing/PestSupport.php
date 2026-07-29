@@ -82,7 +82,7 @@ final class PestSupport
     {
         if (!$value instanceof Result) {
             self::fail(sprintf(
-                '%s() espera un %s, recibió %s.',
+                '%s() expects a %s, got %s.',
                 $expectation,
                 Result::class,
                 get_debug_type($value),
@@ -96,7 +96,7 @@ final class PestSupport
     {
         if (!$value instanceof RecordingPlatform) {
             self::fail(sprintf(
-                '%s() espera una %s, recibió %s.',
+                '%s() expects a %s, got %s.',
                 $expectation,
                 RecordingPlatform::class,
                 get_debug_type($value),
@@ -117,7 +117,7 @@ final class PestSupport
 
         if ($data === null) {
             self::fail(sprintf(
-                "La respuesta del modelo no es JSON válido:\n%s",
+                "The model response is not valid JSON:\n%s",
                 mb_substr($result->text, 0, 300),
             ));
         }
@@ -138,7 +138,7 @@ final class PestSupport
             $value = self::valueAtPath($data, $path);
 
             if ($value === self::MISSING) {
-                self::fail(sprintf('Falta la clave "%s" en la respuesta del modelo.', $path));
+                self::fail(sprintf('Missing key "%s" in the model response.', $path));
             }
 
             $actual = get_debug_type($value);
@@ -146,8 +146,8 @@ final class PestSupport
 
             if (!in_array($actual, $allowed, true)) {
                 self::fail(sprintf(
-                    'La clave "%s" es %s pero se esperaba %s. '
-                    . 'Si el proveedor cambió el modelo, esto es deriva: revisa `llm-vcr drift`.',
+                    'Key "%s" is %s but %s was expected. '
+                    . 'If the provider changed the model, this is drift: check `llm-vcr drift`.',
                     $path,
                     $actual,
                     $expectedTypes,
@@ -161,7 +161,7 @@ final class PestSupport
     public static function assertFromCassette(Result $result): void
     {
         if (!$result->fromCassette) {
-            self::fail('Se esperaba una respuesta servida desde la cassette, pero vino de la API.');
+            self::fail('Expected a response served from the cassette, but it came from the API.');
         }
 
         self::countAssertion();
@@ -173,8 +173,8 @@ final class PestSupport
 
         if ($live !== 0) {
             self::fail(sprintf(
-                'Se esperaban 0 llamadas reales al proveedor, pero hubo %d. '
-                . 'Falta grabar una cassette o el prompt cambió demasiado.',
+                'Expected 0 live calls to the provider, but there were %d. '
+                . 'A cassette is missing, or the prompt changed too much.',
                 $live,
             ));
         }
@@ -188,7 +188,7 @@ final class PestSupport
 
         if ($replayed !== $expected) {
             self::fail(sprintf(
-                'Se esperaban %d reproducciones desde cassette, hubo %d.',
+                'Expected %d replays from cassette, got %d.',
                 $expected,
                 $replayed,
             ));
@@ -206,12 +206,12 @@ final class PestSupport
         $value = self::valueAtPath($data, $path);
 
         if ($value === self::MISSING) {
-            self::fail(sprintf('Falta la clave "%s" en la respuesta del modelo.', $path));
+            self::fail(sprintf('Missing key "%s" in the model response.', $path));
         }
 
         if (!in_array($value, $allowed, true)) {
             self::fail(sprintf(
-                'El valor de "%s" (%s) no está entre los permitidos: %s.',
+                'The value of "%s" (%s) is not among the allowed ones: %s.',
                 $path,
                 var_export($value, true),
                 implode(', ', array_map(static fn (mixed $v): string => var_export($v, true), $allowed)),

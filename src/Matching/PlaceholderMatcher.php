@@ -78,7 +78,7 @@ final class PlaceholderMatcher implements MatcherInterface
 
             if ($replaced === null) {
                 throw new \InvalidArgumentException(sprintf(
-                    'El patrón del placeholder "%s" no es una expresión regular válida: %s',
+                    'The pattern for placeholder "%s" is not a valid regular expression: %s',
                     $name,
                     $pattern,
                 ));

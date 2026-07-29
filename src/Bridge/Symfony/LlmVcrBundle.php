@@ -125,7 +125,7 @@ final class LlmVcrBundle extends AbstractBundle
                 ->args([$matcherConfig['placeholders']]),
             'exact' => $services->set('llm_vcr.matcher', ExactMatcher::class),
             default => throw new \InvalidArgumentException(sprintf(
-                'Estrategia de matcher desconocida: "%s".',
+                'Unknown matcher strategy: "%s".',
                 $matcherConfig['strategy'],
             )),
         };

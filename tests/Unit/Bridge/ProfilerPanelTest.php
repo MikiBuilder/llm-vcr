@@ -123,9 +123,9 @@ final class ProfilerPanelTest extends TestCase
             ->renderBlock('panel', ['collector' => $collector]);
 
         self::assertStringContainsString('Hit rate', $html);
-        self::assertStringContainsString('Tokens no gastados', $html);
-        self::assertStringContainsString('Latencia evitada', $html);
-        self::assertStringContainsString('Cassettes en disco', $html);
+        self::assertStringContainsString('Tokens saved', $html);
+        self::assertStringContainsString('Latency avoided', $html);
+        self::assertStringContainsString('Cassettes on disk', $html);
     }
 
     #[Test]
@@ -154,7 +154,7 @@ final class ProfilerPanelTest extends TestCase
             ->load('Collector/llm_vcr.html.twig')
             ->renderBlock('panel', ['collector' => $this->collector($factory)]);
 
-        self::assertStringContainsString('llamadas reales en modo', $html);
+        self::assertStringContainsString('live calls were made in', $html);
     }
 
     /**
@@ -173,7 +173,7 @@ final class ProfilerPanelTest extends TestCase
             ->load('Collector/llm_vcr.html.twig')
             ->renderBlock('panel', ['collector' => $collector]);
 
-        self::assertStringContainsString('se lee de la cassette', $html);
+        self::assertStringContainsString('read from the cassette', $html);
     }
 
     #[Test]
@@ -199,7 +199,7 @@ final class ProfilerPanelTest extends TestCase
             ->load('Collector/llm_vcr.html.twig')
             ->renderBlock('panel', ['collector' => $collector]);
 
-        self::assertStringNotContainsString('se lee de la cassette', $html);
+        self::assertStringNotContainsString('read from the cassette', $html);
     }
 
     #[Test]
@@ -211,7 +211,7 @@ final class ProfilerPanelTest extends TestCase
             ->load('Collector/llm_vcr.html.twig')
             ->renderBlock('panel', ['collector' => $this->collector($factory)]);
 
-        self::assertStringContainsString('no ha invocado a ningún modelo', $html);
+        self::assertStringContainsString('did not invoke any model', $html);
     }
 
     #[Test]

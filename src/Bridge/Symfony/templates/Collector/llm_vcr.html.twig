@@ -29,23 +29,23 @@
 
         {% set text %}
             <div class="sf-toolbar-info-piece">
-                <b>Modo</b>
+                <b>Mode</b>
                 <span class="sf-toolbar-status sf-toolbar-status-{{ collector.statusColor }}">{{ collector.mode }}</span>
             </div>
             <div class="sf-toolbar-info-piece">
-                <b>Desde cassette</b>
+                <b>From cassette</b>
                 <span>{{ collector.replayed }}</span>
             </div>
             <div class="sf-toolbar-info-piece">
-                <b>Llamadas reales</b>
+                <b>Live calls</b>
                 <span>{{ collector.live }}</span>
             </div>
             <div class="sf-toolbar-info-piece">
-                <b>Tokens ahorrados</b>
+                <b>Tokens saved</b>
                 <span>{{ collector.tokensSaved|number_format(0, ',', '.') }}</span>
             </div>
             <div class="sf-toolbar-info-piece">
-                <b>Tiempo ahorrado</b>
+                <b>Time saved</b>
                 <span>{{ collector.latencySavedMs|number_format(0, ',', '.') }} ms</span>
             </div>
         {% endset %}
@@ -80,15 +80,15 @@
     <div class="metrics">
         <div class="metric">
             <span class="value">{{ collector.mode }}</span>
-            <span class="label">Modo</span>
+            <span class="label">Mode</span>
         </div>
         <div class="metric">
             <span class="value">{{ collector.replayed }}</span>
-            <span class="label">Desde cassette</span>
+            <span class="label">From cassette</span>
         </div>
         <div class="metric">
             <span class="value">{{ collector.live }}</span>
-            <span class="label">Llamadas reales</span>
+            <span class="label">Live calls</span>
         </div>
         <div class="metric">
             <span class="value">{{ collector.hitRatePercent }}<span class="unit">%</span></span>
@@ -99,23 +99,23 @@
     <div class="metrics">
         <div class="metric">
             <span class="value">{{ collector.tokensSaved|number_format(0, ',', '.') }}</span>
-            <span class="label">Tokens no gastados</span>
+            <span class="label">Tokens saved</span>
         </div>
         <div class="metric">
             <span class="value">{{ collector.latencySavedMs|number_format(0, ',', '.') }}<span class="unit">ms</span></span>
-            <span class="label">Latencia evitada</span>
+            <span class="label">Latency avoided</span>
         </div>
         <div class="metric">
             <span class="value">{{ collector.cassetteCount }}</span>
-            <span class="label">Cassettes en disco</span>
+            <span class="label">Cassettes on disk</span>
         </div>
     </div>
 
     {% if collector.live > 0 and collector.mode == 'replay' %}
         <div class="card-block error">
             <p>
-                <strong>Se han hecho {{ collector.live }} llamadas reales en modo <code>replay</code>.</strong>
-                Eso no debería ocurrir: revisa si falta grabar alguna cassette.
+                <strong>{{ collector.live }} live calls were made in <code>replay</code> mode.</strong>
+                That should not happen: check whether a cassette is missing.
             </p>
         </div>
     {% endif %}
@@ -128,85 +128,85 @@
     {% if collector.replayed > 0 and collector.latencySavedMs == 0 %}
         <div class="card-block">
             <p>
-                <strong>Latencia evitada: 0 ms.</strong>
-                El tiempo ahorrado se lee de la cassette, y la que se está
-                reproduciendo se grabó sin latencia (una plataforma simulada,
-                o una grabación anterior). Con un proveedor real aparecerá el
-                tiempo que costó cada respuesta. Para recalcularlo, borra la
-                cassette y vuelve a grabarla.
+                <strong>Latency avoided: 0 ms.</strong>
+                The time saved is read from the cassette, and the one being
+                replayed was recorded without latency (a simulated platform, or
+                an earlier recording). With a real provider you will see how long
+                each response took. To recalculate it, delete the cassette and
+                record it again.
             </p>
         </div>
     {% endif %}
 
     {% if collector.total == 0 %}
         <div class="empty">
-            <p>Esta petición no ha invocado a ningún modelo.</p>
+            <p>This request did not invoke any model.</p>
         </div>
     {% else %}
-        <h3>Resumen</h3>
+        <h3>Summary</h3>
 
         <table>
             <thead>
                 <tr>
-                    <th scope="col">Concepto</th>
-                    <th scope="col">Valor</th>
+                    <th scope="col">Item</th>
+                    <th scope="col">Value</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <th scope="row">Invocaciones totales</th>
+                    <th scope="row">Total invocations</th>
                     <td>{{ collector.total }}</td>
                 </tr>
                 <tr>
-                    <th scope="row">Servidas desde cassette</th>
+                    <th scope="row">Served from cassette</th>
                     <td>{{ collector.replayed }}</td>
                 </tr>
                 <tr>
-                    <th scope="row">Enviadas al proveedor</th>
+                    <th scope="row">Sent to the provider</th>
                     <td>{{ collector.live }}</td>
                 </tr>
                 <tr>
-                    <th scope="row">Plataformas envueltas</th>
+                    <th scope="row">Wrapped platforms</th>
                     <td>{{ collector.platforms }}</td>
                 </tr>
                 <tr>
-                    <th scope="row">Directorio de cassettes</th>
+                    <th scope="row">Cassette directory</th>
                     <td><code>{{ collector.cassetteDir }}</code></td>
                 </tr>
             </tbody>
         </table>
     {% endif %}
 
-    <h3>Modos</h3>
+    <h3>Modes</h3>
 
     <table>
         <thead>
             <tr>
-                <th scope="col">Modo</th>
-                <th scope="col">Cuándo</th>
-                <th scope="col">Comportamiento</th>
+                <th scope="col">Mode</th>
+                <th scope="col">When</th>
+                <th scope="col">Behaviour</th>
             </tr>
         </thead>
         <tbody>
             <tr{% if collector.mode == 'record' %} class="status-success"{% endif %}>
                 <th scope="row"><code>record</code></th>
-                <td>Desarrollo local</td>
-                <td>Graba si no existe; si existe, reproduce</td>
+                <td>Local development</td>
+                <td>Records if missing; replays if present</td>
             </tr>
             <tr{% if collector.mode == 'replay' %} class="status-success"{% endif %}>
                 <th scope="row"><code>replay</code></th>
                 <td>CI</td>
-                <td>Solo reproduce; falla si falta la cassette</td>
+                <td>Replay only; fails if the cassette is missing</td>
             </tr>
             <tr{% if collector.mode == 'bypass' %} class="status-success"{% endif %}>
                 <th scope="row"><code>bypass</code></th>
-                <td>Depuración</td>
-                <td>Ignora cassettes, siempre API real</td>
+                <td>Debugging</td>
+                <td>Ignores cassettes, always hits the real API</td>
             </tr>
             <tr{% if collector.mode == 'refresh' %} class="status-success"{% endif %}>
                 <th scope="row"><code>refresh</code></th>
-                <td>Actualizar fixtures</td>
-                <td>Regraba todo desde cero</td>
+                <td>Updating fixtures</td>
+                <td>Re-records everything from scratch</td>
             </tr>
         </tbody>
     </table>

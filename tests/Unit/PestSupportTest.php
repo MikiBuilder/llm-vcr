@@ -90,7 +90,7 @@ final class PestSupportTest extends TestCase
     public function detectaUnCambioDeTipo(): void
     {
         $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessageMatches('/es string pero se esperaba int/');
+        $this->expectExceptionMessageMatches('/is string but int was expected/');
 
         PestSupport::assertShape($this->makeResult('{"urgencia":"alta"}'), ['urgencia' => 'int']);
     }
@@ -107,7 +107,7 @@ final class PestSupportTest extends TestCase
     public function avisaSiFaltaUnaClave(): void
     {
         $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessageMatches('/Falta la clave "urgencia"/');
+        $this->expectExceptionMessageMatches('/Missing key "urgencia"/');
 
         PestSupport::assertShape($this->makeResult('{"categoria":"acceso"}'), ['urgencia' => 'int']);
     }
@@ -116,7 +116,7 @@ final class PestSupportTest extends TestCase
     public function rechazaUnaRespuestaQueNoEsJson(): void
     {
         $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessageMatches('/no es JSON válido/');
+        $this->expectExceptionMessageMatches('/not valid JSON/');
 
         PestSupport::assertIsJson($this->makeResult('Lo siento, no puedo ayudarte con eso.'));
     }
@@ -142,7 +142,7 @@ final class PestSupportTest extends TestCase
 
         try {
             $this->expectException(AssertionFailedError::class);
-            $this->expectExceptionMessageMatches('/0 llamadas reales/');
+            $this->expectExceptionMessageMatches('/0 live calls/');
 
             PestSupport::assertNoLiveCalls($platform);
         } finally {
@@ -176,7 +176,7 @@ final class PestSupportTest extends TestCase
     public function rechazaUnTipoIncorrectoEnLaExpectativa(): void
     {
         $this->expectException(AssertionFailedError::class);
-        $this->expectExceptionMessageMatches('/espera un .*Result, recibió string/');
+        $this->expectExceptionMessageMatches('/expects a .*Result, got string/');
 
         PestSupport::resultFrom('no soy un Result', 'toBeLlmJson');
     }

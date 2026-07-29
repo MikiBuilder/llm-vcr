@@ -26,7 +26,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 #[AsCommand(
     name: 'llm-vcr:drift',
-    description: 'Detecta si el modelo del proveedor ha cambiado respecto a las cassettes grabadas',
+    description: 'Detect whether the provider model changed compared to the recorded cassettes',
 )]
 final class DriftCommand extends Command
 {
@@ -40,17 +40,17 @@ final class DriftCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('dir', null, InputOption::VALUE_REQUIRED, 'Directorio de cassettes')
-            ->addOption('markdown', null, InputOption::VALUE_NONE, 'Salida en Markdown, para pegar en una PR')
+            ->addOption('dir', null, InputOption::VALUE_REQUIRED, 'Cassette directory')
+            ->addOption('markdown', null, InputOption::VALUE_NONE, 'Markdown output, to paste into a PR')
             ->setHelp(<<<'TXT'
-                Reproduce las cassettes grabadas contra el proveedor real y compara
-                las respuestas actuales con las guardadas.
+                Replays the recorded cassettes against the real provider and compares
+                the current responses with the stored ones.
 
-                Detecta tanto cambios de contenido como cambios de <info>tipo</info> en el JSON,
-                que son los que rompen tus DTOs sin que hayas tocado el código.
+                Detects both content changes and <info>type</info> changes in the JSON,
+                which are the ones that break your DTOs without you touching any code.
 
-                Requiere que un servicio implemente PlatformInterface y esté
-                registrado como "llm_vcr.live_platform".
+                Requires a service implementing PlatformInterface registered
+                under the "llm_vcr.live_platform" alias.
                 TXT);
     }
 
@@ -60,8 +60,8 @@ final class DriftCommand extends Command
 
         if ($this->livePlatform === null) {
             $io->error([
-                'No hay ninguna plataforma real configurada.',
-                'Registra tu cliente LLM como servicio con el alias "llm_vcr.live_platform".',
+                'No live platform is configured.',
+                'Register your LLM client as a service under the "llm_vcr.live_platform" alias.',
             ]);
 
             return Command::FAILURE;
@@ -74,7 +74,7 @@ final class DriftCommand extends Command
         $files = glob(rtrim($dir, '/') . '/*.json');
 
         if ($files === false || $files === []) {
-            $io->warning(sprintf('No hay cassettes en %s', $dir));
+            $io->warning(sprintf('No cassettes found in %s', $dir));
 
             return Command::SUCCESS;
         }
@@ -102,9 +102,9 @@ final class DriftCommand extends Command
         }
 
         if ($markdown) {
-            $output->writeln('## Informe de deriva — llm-vcr');
+            $output->writeln('## Drift report — llm-vcr');
             $output->writeln('');
-            $output->writeln('| Severidad | Modelo | Similitud | Cambios |');
+            $output->writeln('| Severity | Model | Similarity | Changes |');
             $output->writeln('|---|---|---|---|');
             foreach ($rows as $row) {
                 $output->writeln(sprintf('| %s | `%s` | %s | %s |', ...$row));
@@ -113,13 +113,13 @@ final class DriftCommand extends Command
             return $worst;
         }
 
-        $io->title('Informe de deriva');
-        $io->table(['Severidad', 'Modelo', 'Similitud', 'Cambios'], $rows);
+        $io->title('Drift report');
+        $io->table(['Severity', 'Model', 'Similarity', 'Changes'], $rows);
 
         if ($worst === Command::SUCCESS) {
-            $io->success(sprintf('Sin deriva significativa en %d interacciones.', count($rows)));
+            $io->success(sprintf('No significant drift across %d interactions.', count($rows)));
         } else {
-            $io->error('Deriva detectada. Revisa los prompts y regraba las cassettes afectadas.');
+            $io->error('Drift detected. Review the prompts and re-record the affected cassettes.');
         }
 
         return $worst;

@@ -7,6 +7,14 @@ y el versionado sigue [SemVer](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+### Cambiado
+- **Documentación y mensajes en inglés.** El README principal pasa a inglés
+  (lengua franca del open source) con selector de idioma hacia `README.es.md`,
+  que se mantiene en castellano. También se traducen la descripción de Packagist,
+  los mensajes de excepción, la salida del CLI y el panel del Web Profiler.
+  Un artículo en inglés que lleva a un repositorio en español pierde al lector
+  en el último paso.
+
 ### Añadido
 - **`LlmVcrBundle` para Symfony 7.4**: configuración declarativa, servicios
   autoconfigurados y `PlatformFactory` inyectable.

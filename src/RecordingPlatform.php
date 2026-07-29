@@ -76,7 +76,7 @@ final class RecordingPlatform implements PlatformInterface
 
         if ($slug === '') {
             throw new \InvalidArgumentException(
-                'El nombre de la cassette no puede quedar vacío tras normalizarlo.',
+                'The cassette name cannot be empty after normalisation.',
             );
         }
 

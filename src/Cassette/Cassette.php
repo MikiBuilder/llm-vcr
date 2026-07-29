@@ -45,7 +45,7 @@ final class Cassette
             $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
             throw new LlmVcrException(
-                sprintf('Cassette corrupta en "%s": %s', $path, $e->getMessage()),
+                sprintf('Corrupted cassette at "%s": %s', $path, $e->getMessage()),
                 previous: $e,
             );
         }
@@ -96,7 +96,7 @@ final class Cassette
 
         $dir = dirname($this->path);
         if (!is_dir($dir) && !mkdir($dir, 0o775, true) && !is_dir($dir)) {
-            throw new LlmVcrException(sprintf('No se pudo crear el directorio de cassettes: %s', $dir));
+            throw new LlmVcrException(sprintf('Could not create the cassette directory: %s', $dir));
         }
 
         $payload = [
@@ -116,12 +116,12 @@ final class Cassette
         $tmp = $this->path . '.' . bin2hex(random_bytes(4)) . '.tmp';
 
         if (file_put_contents($tmp, $json . "\n") === false) {
-            throw new LlmVcrException(sprintf('No se pudo escribir la cassette: %s', $tmp));
+            throw new LlmVcrException(sprintf('Could not write the cassette: %s', $tmp));
         }
 
         if (!rename($tmp, $this->path)) {
             @unlink($tmp);
-            throw new LlmVcrException(sprintf('No se pudo mover la cassette a: %s', $this->path));
+            throw new LlmVcrException(sprintf('Could not move the cassette to: %s', $this->path));
         }
 
         $this->dirty = false;
