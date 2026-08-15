@@ -7,6 +7,12 @@ y el versionado sigue [SemVer](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+### Cambiado
+- Actualizadas las referencias a `llama-3.3-70b-versatile`, retirado por Groq el
+  16 de agosto de 2026. La alternativa recomendada es `openai/gpt-oss-120b`, que
+  además soporta structured outputs en modo strict.
+- `.env.example` traducido al inglés: se quedó en castellano en la v0.3.0.
+
 ### Corregido
 - Separador de miles del panel en formato inglés (`1,280` en lugar de `1.280`).
   Con la notación española, un lector anglosajón lee "1.280 ms" como 1,28 ms.

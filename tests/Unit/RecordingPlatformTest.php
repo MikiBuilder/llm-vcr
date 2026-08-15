@@ -141,7 +141,7 @@ final class RecordingPlatformTest extends TestCase
 
         $this->expectException(CassetteNotFoundException::class);
 
-        $vcr->invoke('llama-3.3-70b-versatile', $this->messages);
+        $vcr->invoke('openai/gpt-oss-120b', $this->messages);
     }
 
     #[Test]
