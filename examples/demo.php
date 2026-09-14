@@ -43,7 +43,7 @@ function fila(string $k, string $v, string $c = '0'): void
 }
 
 $system = 'Clasifica tickets de soporte y responde en JSON.';
-$model = 'llama-3.1-8b-instant';
+$model = 'openai/gpt-oss-20b';
 
 $guion = [
     'no puedo acceder' => '{"categoria":"acceso","sentimiento":"frustrado","urgencia":4}',

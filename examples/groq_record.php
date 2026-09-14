@@ -38,7 +38,7 @@ if (!is_string($apiKey) || trim($apiKey) === '') {
     exit(1);
 }
 
-$model = getenv('LLM_VCR_MODEL') ?: 'llama-3.1-8b-instant';
+$model = getenv('LLM_VCR_MODEL') ?: 'openai/gpt-oss-20b';
 $cassetteDir = __DIR__ . '/../cassettes';
 
 $platform = new RecordingPlatform(

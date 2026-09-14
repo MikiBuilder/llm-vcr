@@ -164,7 +164,7 @@ final class TicketAnalyzer
     {
         $platform = $this->vcr->wrap($this->client, cassette: 'tickets');
 
-        $result = $platform->invoke('llama-3.1-8b-instant', [
+        $result = $platform->invoke('openai/gpt-oss-20b', [
             ['role' => 'system', 'content' => 'Classify tickets. Respond with JSON.'],
             ['role' => 'user',   'content' => $text],
         ]);
@@ -228,7 +228,7 @@ final class TicketTest extends TestCase
     {
         $platform = $this->recordLlm(GroqPlatform::fromEnv());
 
-        $result = $platform->invoke('llama-3.1-8b-instant', [
+        $result = $platform->invoke('openai/gpt-oss-20b', [
             ['role' => 'system', 'content' => 'Classify tickets. Respond with JSON.'],
             ['role' => 'user',   'content' => 'I cannot access my account.'],
         ]);
@@ -262,7 +262,7 @@ use function MikiBuilder\LlmVcr\Testing\recordLlm;
 it('classifies an access problem', function () {
     $platform = recordLlm(GroqPlatform::fromEnv(), cassette: 'tickets');
 
-    $result = $platform->invoke('llama-3.1-8b-instant', [...]);
+    $result = $platform->invoke('openai/gpt-oss-20b', [...]);
 
     expect($platform)->toHaveMadeNoLiveCalls()->toHaveReplayed(1);
     expect($result)->toBeLlmJson()
@@ -411,7 +411,7 @@ of `PlatformInterface` without your business code noticing.
     {
       "fingerprint": "cc915e9e1164167c",
       "request": {
-        "model": "llama-3.1-8b-instant",
+        "model": "openai/gpt-oss-20b",
         "messages": [
           { "role": "system", "content": "Classify support tickets as JSON." },
           { "role": "user", "content": "I'm <REDACTED:EMAIL>, tel <REDACTED:PHONE>, cannot log in." }

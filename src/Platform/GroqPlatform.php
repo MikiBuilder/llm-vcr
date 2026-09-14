@@ -98,7 +98,7 @@ final class GroqPlatform implements PlatformInterface
         if ($status === 429) {
             throw new TransportException(
                 'Rate limit reached on the free tier. Wait a minute or use a model '
-                . 'with a higher quota (llama-3.1-8b-instant).',
+                . 'with a higher quota. Check https://console.groq.com/docs/models for the current list.',
             );
         }
 

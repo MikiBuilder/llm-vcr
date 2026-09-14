@@ -1,12 +1,12 @@
 {
-    "cassette": "eres-un-clasificador-de-tickets-de-sopor-11d466fe",
+    "cassette": "eres-un-clasificador-de-tickets-de-sopor-1070731d",
     "version": 1,
     "interactions": [
         {
             "fingerprint": "59658fa024d81cd8",
-            "recorded_at": "2026-07-28T22:03:46+02:00",
+            "recorded_at": "2026-09-14T09:53:16+02:00",
             "request": {
-                "model": "llama-3.1-8b-instant",
+                "model": "openai/gpt-oss-20b",
                 "messages": [
                     {
                         "role": "system",
@@ -22,17 +22,17 @@
                 }
             },
             "response": {
-                "text": "{\"categoria\": \"Acceso a la cuenta\", \"sentimiento\": \"Negativo\", \"urgencia\": 5}",
-                "input_tokens": 115,
-                "output_tokens": 26,
-                "latency_ms": 437.6
+                "text": "{\"categoria\":\"Acceso a cuenta\",\"sentimiento\":\"frustración\",\"urgencia\":5}",
+                "input_tokens": 147,
+                "output_tokens": 124,
+                "latency_ms": 899.07
             }
         },
         {
             "fingerprint": "c96dcaacebdfcf29",
-            "recorded_at": "2026-07-28T22:03:46+02:00",
+            "recorded_at": "2026-09-14T09:53:17+02:00",
             "request": {
-                "model": "llama-3.1-8b-instant",
+                "model": "openai/gpt-oss-20b",
                 "messages": [
                     {
                         "role": "system",
@@ -48,17 +48,17 @@
                 }
             },
             "response": {
-                "text": "{\"categoria\": \"Facturación\", \"sentimiento\": \"Neutral\", \"urgencia\": 1}",
-                "input_tokens": 120,
-                "output_tokens": 23,
-                "latency_ms": 227.21
+                "text": "{\"categoria\":\"Factura\",\"sentimiento\":\"neutral\",\"urgencia\":2}",
+                "input_tokens": 150,
+                "output_tokens": 143,
+                "latency_ms": 824.72
             }
         },
         {
             "fingerprint": "ad78f5904208d2f8",
-            "recorded_at": "2026-07-28T22:03:47+02:00",
+            "recorded_at": "2026-09-14T09:53:18+02:00",
             "request": {
-                "model": "llama-3.1-8b-instant",
+                "model": "openai/gpt-oss-20b",
                 "messages": [
                     {
                         "role": "system",
@@ -74,10 +74,10 @@
                 }
             },
             "response": {
-                "text": "{\"categoria\": \"Servicio\", \"sentimiento\": \"Negativo\", \"urgencia\": 5}",
-                "input_tokens": 119,
-                "output_tokens": 23,
-                "latency_ms": 235.09
+                "text": "{\"categoria\":\"Servicio caído\",\"sentimiento\":\"frustración\",\"urgencia\":5}",
+                "input_tokens": 150,
+                "output_tokens": 136,
+                "latency_ms": 807.01
             }
         }
     ]

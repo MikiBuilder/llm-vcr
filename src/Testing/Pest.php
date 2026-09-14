@@ -11,7 +11,7 @@ declare(strict_types=1);
  *   it('clasifica un ticket de acceso', function () {
  *       $platform = recordLlm(new GroqPlatform($key), cassette: 'tickets');
  *
- *       $result = $platform->invoke('llama-3.1-8b-instant', [...]);
+ *       $result = $platform->invoke('openai/gpt-oss-20b', [...]);
  *
  *       expect($platform)->toHaveMadeNoLiveCalls();
  *       expect($result)->toBeLlmJson()

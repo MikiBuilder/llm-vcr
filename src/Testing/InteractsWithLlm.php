@@ -27,7 +27,7 @@ use PHPUnit\Framework\Assert;
  *       {
  *           $platform = $this->recordLlm(new GroqPlatform($key));
  *
- *           $result = $platform->invoke('llama-3.1-8b-instant', [...]);
+ *           $result = $platform->invoke('openai/gpt-oss-20b', [...]);
  *
  *           $this->assertNoLiveLlmCalls();
  *           $this->assertLlmJsonShape(['categoria' => 'string'], $result);

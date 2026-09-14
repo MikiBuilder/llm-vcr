@@ -122,10 +122,10 @@ final class HomeController extends AbstractController
             simulatedLatencyMs: 320.0,
         );
 
-        $vcr->wrap($llm, cassette: 'web')->invoke('llama-3.1-8b-instant', $mensajes);
+        $vcr->wrap($llm, cassette: 'web')->invoke('openai/gpt-oss-20b', $mensajes);
 
         for ($i = 0; $i < 3; ++$i) {
-            $vcr->wrap($llm, cassette: 'web')->invoke('llama-3.1-8b-instant', $mensajes);
+            $vcr->wrap($llm, cassette: 'web')->invoke('openai/gpt-oss-20b', $mensajes);
         }
 
         return new Response('<html><body><h1>Demo llm-vcr</h1>'

@@ -50,7 +50,7 @@ final class HomeController extends AbstractController
 
         // 1 grabación real + 3 reproducciones = 75 % de hit rate.
         for ($i = 0; $i < 4; ++$i) {
-            $vcr->wrap($llm, cassette: 'web')->invoke('llama-3.1-8b-instant', $mensajes);
+            $vcr->wrap($llm, cassette: 'web')->invoke('openai/gpt-oss-20b', $mensajes);
         }
 
         return new Response(<<<'HTML'

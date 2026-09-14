@@ -11,6 +11,6 @@ services:
     environment:
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       LLM_VCR_MODE: ${LLM_VCR_MODE:-record}
-      LLM_VCR_MODEL: ${LLM_VCR_MODEL:-llama-3.1-8b-instant}
+      LLM_VCR_MODEL: ${LLM_VCR_MODEL:-openai/gpt-oss-20b}
     # Mantiene el contenedor vivo para entrar con `docker compose exec`.
     command: tail -f /dev/null

@@ -7,17 +7,34 @@ y el versionado sigue [SemVer](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
-### Cambiado
-- Actualizadas las referencias a `llama-3.3-70b-versatile`, retirado por Groq el
-  16 de agosto de 2026. La alternativa recomendada es `openai/gpt-oss-120b`, que
-  además soporta structured outputs en modo strict.
-- `.env.example` traducido al inglés: se quedó en castellano en la v0.3.0.
-
 ### Corregido
+- **El modelo por defecto ya no existe.** Groq retiró `llama-3.1-8b-instant` el
+  16 de agosto de 2026 y desde entonces devuelve `404 model_not_found`. El
+  proyecto pasa a `openai/gpt-oss-20b`, y las cassettes de ejemplo se han
+  regrabado contra él.
+
+  El aviso de Groq anunciaba la retirada de `llama-3.3-70b-versatile` y de
+  `llama-3.1-8b-instant` en la misma fecha. Se actualizó el primero y no el
+  segundo, que además era el valor por defecto: el cron nocturno de deriva
+  llevaba desde el 18 de agosto fallando en cada ejecución.
+
+- **El cron de deriva abría un issue por noche.** El título incluía la fecha,
+  así que la ejecución siguiente no encontraba el anterior y creaba uno nuevo.
+  Ahora se reutiliza un único issue de seguimiento: se comenta si sigue habiendo
+  deriva, se reabre si estaba cerrado y se cierra cuando la deriva desaparece.
+
+- **Un fallo del comando se reportaba como deriva.** `continue-on-error` más
+  `outcome == 'failure'` no distinguían entre "hay deriva" y "el comando ha
+  reventado", así que un crash generaba un issue con el cuerpo vacío. Ahora se
+  distingue por código de salida y un error deja el workflow en rojo.
+
 - Separador de miles del panel en formato inglés (`1,280` en lugar de `1.280`).
   Con la notación española, un lector anglosajón lee "1.280 ms" como 1,28 ms.
 
 ### Cambiado
+- Actualizadas las referencias a `llama-3.3-70b-versatile`, retirado por Groq el
+  16 de agosto de 2026.
+- `.env.example` traducido al inglés: se quedó en castellano en la v0.3.0.
 - **Documentación y mensajes en inglés.** El README principal pasa a inglés
   (lengua franca del open source) con selector de idioma hacia `README.es.md`,
   que se mantiene en castellano. También se traducen la descripción de Packagist,
@@ -33,7 +50,7 @@ y el versionado sigue [SemVer](https://semver.org/lang/es/).
 - Comando `llm-vcr:drift` para Symfony Console, con salida Markdown.
 - `RecordingPlatform::useCassette()` para fijar el nombre de la cassette.
 
-### Corregido
+### Corregido (bundle)
 - **El panel del Profiler no se registraba nunca.** El valor por defecto de
   `profiler` llega a `loadExtension()` como el string `"%kernel.debug%"` sin
   resolver, así que compararlo con `true` daba siempre falso. Detectado al
@@ -42,8 +59,6 @@ y el versionado sigue [SemVer](https://semver.org/lang/es/).
 ### Mejorado
 - La barra de depuración lleva ahora un **icono SVG**, igual que el resto de
   collectors de Symfony. Sin él, nuestro bloque desentonaba en la toolbar.
-
-### Mejorado
 - El panel explica por qué "Latencia evitada" puede salir 0 ms: el tiempo se
   lee de la cassette, así que una grabada sin latencia no tiene nada que
   mostrar. Sin la nota parecía un fallo del panel.
@@ -61,6 +76,9 @@ y el versionado sigue [SemVer](https://semver.org/lang/es/).
 - Los nodos de configuración con claves arbitrarias (`custom_rules`,
   `placeholders`) usan `normalizeKeys(false)`. Con `useAttributeAsKey()`
   Symfony destruía las claves que son expresiones regulares.
+- El identificador del modelo estaba repetido en más de veinte ficheros. Una
+  retirada del proveedor debería resolverse cambiando una variable de entorno,
+  no con una búsqueda global.
 
 ### Pendiente
 - `EmbeddingMatcher` con caché en disco
@@ -122,5 +140,5 @@ Dos errores encontrados durante el desarrollo, ambos con test de regresión:
   ejecutaba antes de que existieran sus funciones globales y el registro
   fallaba en silencio. La guarda correcta es `class_exists()`.
 
-[Sin publicar]: https://github.com/MikiBuilder/llm-vcr/compare/v0.1.0...HEAD
+[Sin publicar]: https://github.com/MikiBuilder/llm-vcr/compare/v0.3.1...HEAD
 [0.1.0]: https://github.com/MikiBuilder/llm-vcr/releases/tag/v0.1.0

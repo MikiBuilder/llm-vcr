@@ -162,7 +162,7 @@ final class TicketAnalyzer
     {
         $platform = $this->vcr->wrap($this->cliente, cassette: 'tickets');
 
-        $result = $platform->invoke('llama-3.1-8b-instant', [
+        $result = $platform->invoke('openai/gpt-oss-20b', [
             ['role' => 'system', 'content' => 'Clasifica tickets. Responde JSON.'],
             ['role' => 'user',   'content' => $texto],
         ]);
@@ -227,7 +227,7 @@ final class TicketTest extends TestCase
     {
         $platform = $this->recordLlm(GroqPlatform::fromEnv());
 
-        $result = $platform->invoke('llama-3.1-8b-instant', [
+        $result = $platform->invoke('openai/gpt-oss-20b', [
             ['role' => 'system', 'content' => 'Clasifica tickets. Responde JSON.'],
             ['role' => 'user',   'content' => 'No puedo acceder a mi cuenta.'],
         ]);
@@ -261,7 +261,7 @@ use function MikiBuilder\LlmVcr\Testing\recordLlm;
 it('clasifica un problema de acceso', function () {
     $platform = recordLlm(GroqPlatform::fromEnv(), cassette: 'tickets');
 
-    $result = $platform->invoke('llama-3.1-8b-instant', [...]);
+    $result = $platform->invoke('openai/gpt-oss-20b', [...]);
 
     expect($platform)->toHaveMadeNoLiveCalls()->toHaveReplayed(1);
     expect($result)->toBeLlmJson()
@@ -449,7 +449,7 @@ Es un **decorador**, no un fork. Sustitución de Liskov pura: envuelve cualquier
     {
       "fingerprint": "cc915e9e1164167c",
       "request": {
-        "model": "llama-3.1-8b-instant",
+        "model": "openai/gpt-oss-20b",
         "messages": [
           { "role": "system", "content": "Clasifica tickets de soporte en JSON." },
           { "role": "user", "content": "Soy <REDACTED:EMAIL>, tel <REDACTED:PHONE>, no puedo acceder." }

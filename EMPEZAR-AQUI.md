@@ -92,7 +92,7 @@ php examples/groq_record.php   # 1ª vez: llama a la API
 php examples/groq_record.php   # 2ª vez: desde disco, sin red
 ```
 
-**Free tier:** 30 peticiones/min y ~1.000/día con `llama-3.1-8b-instant`.
+**Free tier:** 30 peticiones/min y ~1.000/día con `openai/gpt-oss-20b`.
 
 ⚠️ **`.env` está en `.gitignore`. Nunca lo commitees.**
 
