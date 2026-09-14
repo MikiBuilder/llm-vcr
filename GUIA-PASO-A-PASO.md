@@ -283,7 +283,7 @@ git add cassettes/
 ```
 
 ```powershell
-git commit -m "test: cassettes grabadas contra Groq llama-3.1-8b-instant"
+git commit -m "test: cassettes grabadas contra Groq openai/gpt-oss-20b"
 ```
 
 ```powershell
